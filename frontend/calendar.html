@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar | Attendance Management System</title>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <script src="/assets/js/api.js" defer></script>
+  <script src="/assets/js/common.js" defer></script>
+  <script src="/assets/js/calendar.js" defer></script>
+</head>
+<body>
+  <div class="shell-layout">
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-brand">
+          <h1>Attendance Pro</h1>
+          <p>School attendance workspace</p>
+        </div>
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="dashboard.html" data-nav>Dashboard</a>
+          <a class="nav-link" href="analytics.html" data-nav>Analytics</a>
+          <a class="nav-link" href="students.html" data-nav>Students</a>
+          <a class="nav-link" href="attendance.html" data-nav>Attendance</a>
+          <a class="nav-link" href="records.html" data-nav>Records</a>
+          <a class="nav-link" href="classes.html" data-nav>Classes</a>
+          <a class="nav-link" href="calendar.html" data-nav>Calendar</a>
+          <a class="nav-link" href="activity-log.html" data-nav>Activity Log</a>
+          <a class="nav-link" href="settings.html" data-nav>Settings</a>
+        </nav>
+      </div>
+      <div class="sidebar-user">
+        <strong data-user-name>Loading...</strong>
+        <span data-user-role></span>
+        <button class="btn btn-secondary" type="button" data-logout>Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Academic calendar</p>
+          <h2>Calendar</h2>
+          <p>View working days, holidays, and weekends. Admins can add or remove holidays.</p>
+        </div>
+        <div class="hero-actions" data-admin-only>
+          <button class="btn btn-secondary" id="load-presets-btn" type="button">Load Indian Holidays</button>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="calendar-nav">
+          <button type="button" id="prev-month-btn">← Previous</button>
+          <h3 id="calendar-month-label">Loading...</h3>
+          <button type="button" id="next-month-btn">Next →</button>
+        </div>
+
+        <div class="calendar-grid" id="calendar-grid"></div>
+
+        <div style="margin-top:16px;display:flex;gap:16px;flex-wrap:wrap;">
+          <span><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:var(--surface);border:1px solid var(--border);vertical-align:middle;"></span> Working</span>
+          <span><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:rgba(220,38,38,0.08);vertical-align:middle;"></span> Holiday</span>
+          <span><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:rgba(107,114,128,0.08);vertical-align:middle;"></span> Weekend</span>
+          <span><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:rgba(37,99,235,0.08);vertical-align:middle;"></span> Exam</span>
+          <span><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:rgba(217,119,6,0.08);vertical-align:middle;"></span> Half Day</span>
+        </div>
+      </section>
+
+      <section class="grid two">
+        <article class="card">
+          <h3>📅 Upcoming Holidays</h3>
+          <div id="upcoming-holidays-list"></div>
+        </article>
+        <article class="card">
+          <h3>Working Days Summary</h3>
+          <div id="working-days-summary"></div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toast-root"></div>
+</body>
+</html>

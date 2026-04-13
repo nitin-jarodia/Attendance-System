@@ -3,6 +3,7 @@ from datetime import date
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
+from app.models.activity_log import ActivityLog
 from app.models.attendance import Attendance
 from app.models.classroom import Classroom
 from app.models.student import Student
@@ -13,6 +14,7 @@ from app.schemas.dashboard import DashboardSummaryRead, RecentActivityRead
 def get_dashboard_summary(db: Session, current_user: User) -> DashboardSummaryRead:
     today = date.today()
     class_filter = Student.class_id == current_user.assigned_class_id if current_user.role == "teacher" else None
+    # Principal and admin see all data (no class filter)
 
     student_count_statement = select(func.count(Student.id))
     if class_filter is not None:

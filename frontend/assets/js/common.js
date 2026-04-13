@@ -8,6 +8,18 @@ const STORAGE_KEYS = {
   language: "attendance_language",
 };
 
+const ROLE_NAV_MAP = {
+  teacher: ["dashboard.html", "attendance.html", "records.html", "calendar.html", "settings.html"],
+  admin: ["dashboard.html", "analytics.html", "students.html", "attendance.html", "records.html", "classes.html", "calendar.html", "activity-log.html", "settings.html"],
+  principal: ["dashboard.html", "analytics.html", "attendance.html", "records.html", "calendar.html", "activity-log.html", "settings.html"],
+};
+
+const ROLE_BADGE_COLORS = {
+  teacher: "var(--primary)",
+  admin: "var(--warning)",
+  principal: "#ca8a04",
+};
+
 let activeDialogCleanup = null;
 
 function getTodayDate() {
@@ -57,9 +69,7 @@ function clearAuthState() {
 
 function redirectToLogin() {
   const currentPath = window.location.pathname.split("/").pop() || "dashboard.html";
-  if (currentPath === "login.html") {
-    return;
-  }
+  if (currentPath === "login.html") return;
   window.location.href = `/login.html?next=${encodeURIComponent(currentPath)}`;
 }
 
@@ -69,20 +79,14 @@ function statusBadge(status) {
 
 function showToast(message, type = "success", options = {}) {
   const root = document.getElementById("toast-root");
-  if (!root) {
-    return;
-  }
+  if (!root) return;
 
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
   toast.innerHTML = `
     <div class="toast-content">
       <p>${escapeHtml(message)}</p>
-      ${
-        options.actionLabel
-          ? `<button class="toast-action" type="button">${escapeHtml(options.actionLabel)}</button>`
-          : ""
-      }
+      ${options.actionLabel ? `<button class="toast-action" type="button">${escapeHtml(options.actionLabel)}</button>` : ""}
     </div>
   `;
   root.appendChild(toast);
@@ -94,10 +98,7 @@ function showToast(message, type = "success", options = {}) {
     });
   }
 
-  const timeout = window.setTimeout(() => {
-    toast.remove();
-  }, options.duration || 4000);
-
+  const timeout = window.setTimeout(() => toast.remove(), options.duration || 4000);
   toast.addEventListener("mouseenter", () => window.clearTimeout(timeout), { once: true });
 }
 
@@ -106,12 +107,7 @@ function closeDialog() {
   activeDialogCleanup = null;
 }
 
-function showDialog({
-  title,
-  description = "",
-  bodyHtml = "",
-  actions = [],
-}) {
+function showDialog({ title, description = "", bodyHtml = "", actions = [] }) {
   closeDialog();
 
   const dialogRoot = document.createElement("div");
@@ -136,31 +132,24 @@ function showDialog({
     button.type = action.submit ? "submit" : "button";
     button.className = `btn ${action.variant || "btn-secondary"}`;
     button.textContent = action.label;
-    if (action.id) {
-      button.dataset.actionId = action.id;
-    }
-    if (index === 0) {
-      button.autofocus = true;
-    }
+    if (action.id) button.dataset.actionId = action.id;
+    if (index === 0) button.autofocus = true;
     button.addEventListener("click", async () => {
       if (typeof action.onClick === "function") {
         const result = await action.onClick(dialogRoot);
-        if (result === false) {
-          return;
-        }
+        if (result === false) return;
       }
-      if (!action.keepOpen) {
-        closeDialog();
-      }
+      if (!action.keepOpen) closeDialog();
     });
     actionsContainer.appendChild(button);
   });
 
   dialogRoot.querySelector(".icon-button")?.addEventListener("click", closeDialog);
   dialogRoot.addEventListener("click", (event) => {
-    if (event.target === dialogRoot) {
-      closeDialog();
-    }
+    if (event.target === dialogRoot) closeDialog();
+  });
+  document.addEventListener("keydown", function escHandler(e) {
+    if (e.key === "Escape") { closeDialog(); document.removeEventListener("keydown", escHandler); }
   });
 
   document.body.appendChild(dialogRoot);
@@ -187,15 +176,79 @@ function setActiveNav() {
 }
 
 function renderCurrentUser(user) {
-  document.querySelectorAll("[data-user-name]").forEach((element) => {
-    element.textContent = user?.username || "Guest";
+  document.querySelectorAll("[data-user-name]").forEach((el) => {
+    el.textContent = user?.username || "Guest";
   });
-  document.querySelectorAll("[data-user-role]").forEach((element) => {
-    element.textContent = user?.role ? String(user.role).toUpperCase() : "";
+  document.querySelectorAll("[data-user-role]").forEach((el) => {
+    if (user?.role) {
+      const color = ROLE_BADGE_COLORS[user.role] || "var(--muted)";
+      el.innerHTML = `<span class="role-badge" style="background:${color};color:#fff;padding:3px 10px;border-radius:999px;font-size:0.75rem;font-weight:700;text-transform:uppercase;">${escapeHtml(user.role)}</span>`;
+    } else {
+      el.textContent = "";
+    }
   });
-  document.querySelectorAll("[data-admin-only]").forEach((element) => {
-    element.hidden = user?.role !== "admin";
+
+  // Role-based sidebar visibility
+  const role = user?.role || "teacher";
+  const allowedPages = ROLE_NAV_MAP[role] || ROLE_NAV_MAP.teacher;
+  document.querySelectorAll("[data-nav]").forEach((link) => {
+    const page = link.getAttribute("href");
+    link.style.display = allowedPages.includes(page) ? "" : "none";
   });
+
+  // data-admin-only elements
+  document.querySelectorAll("[data-admin-only]").forEach((el) => {
+    el.hidden = user?.role !== "admin";
+  });
+
+  // data-readonly-for-principal elements
+  document.querySelectorAll("[data-readonly-for-principal]").forEach((el) => {
+    if (user?.role === "principal") {
+      el.querySelectorAll("button:not([data-always-visible]), .btn:not([data-always-visible])").forEach((btn) => {
+        btn.disabled = true;
+        btn.title = "View only — principals cannot modify data";
+      });
+    }
+  });
+
+  // Render role switcher
+  renderRoleSwitcher(user);
+}
+
+function renderRoleSwitcher(user) {
+  const existing = document.getElementById("demo-role-switcher");
+  if (existing) existing.remove();
+
+  if (!user) return;
+
+  const container = document.querySelector(".sidebar-user");
+  if (!container) return;
+
+  const switcher = document.createElement("div");
+  switcher.id = "demo-role-switcher";
+  switcher.style.cssText = "margin-top:8px;";
+  switcher.innerHTML = `
+    <label style="font-size:0.72rem;color:var(--sidebar-muted);display:block;margin-bottom:4px;">Demo — Switch Role</label>
+    <select class="select" style="padding:6px 10px;font-size:0.82rem;border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.15);width:100%;">
+      <option value="teacher" ${user.role === "teacher" ? "selected" : ""}>Teacher</option>
+      <option value="admin" ${user.role === "admin" ? "selected" : ""}>Admin</option>
+      <option value="principal" ${user.role === "principal" ? "selected" : ""}>Principal</option>
+    </select>
+  `;
+
+  const selectEl = switcher.querySelector("select");
+  selectEl.addEventListener("change", async () => {
+    try {
+      const result = await window.apiClient.demoSwitchRole(selectEl.value);
+      setAuthState(result.access_token, result.user);
+      window.location.reload();
+    } catch (err) {
+      showToast(err.message, "error");
+      selectEl.value = user.role;
+    }
+  });
+
+  container.appendChild(switcher);
 }
 
 function attachLogoutHandlers() {
@@ -220,12 +273,12 @@ function buildNavIcons() {
     "attendance.html": "✓",
     "records.html": "▤",
     "classes.html": "▣",
+    "calendar.html": "📅",
+    "activity-log.html": "📝",
     "settings.html": "⚙",
   };
   document.querySelectorAll("[data-nav]").forEach((link) => {
-    if (link.querySelector(".nav-icon")) {
-      return;
-    }
+    if (link.querySelector(".nav-icon")) return;
     const label = link.textContent.trim();
     const icon = iconMap[link.getAttribute("href")] || "•";
     link.dataset.label = label;
@@ -239,9 +292,7 @@ function buildNavIcons() {
 function initializeSidebar() {
   const shell = document.querySelector(".shell-layout");
   const sidebar = document.querySelector(".sidebar");
-  if (!shell || !sidebar || document.querySelector(".sidebar-hover-zone")) {
-    return;
-  }
+  if (!shell || !sidebar || document.querySelector(".sidebar-hover-zone")) return;
 
   buildNavIcons();
   shell.classList.add("sidebar-collapsed");
@@ -278,17 +329,13 @@ function initializeSidebar() {
   }
 
   function expandSidebar() {
-    if (!isDesktopViewport()) {
-      return;
-    }
+    if (!isDesktopViewport()) return;
     shell.classList.add("sidebar-expanded");
     shell.classList.remove("sidebar-collapsed");
   }
 
   function collapseSidebar() {
-    if (!isDesktopViewport() || pinned) {
-      return;
-    }
+    if (!isDesktopViewport() || pinned) return;
     shell.classList.remove("sidebar-expanded");
     shell.classList.add("sidebar-collapsed");
   }
@@ -303,13 +350,8 @@ function initializeSidebar() {
   sidebar.addEventListener("mouseenter", expandSidebar);
   sidebar.addEventListener("mouseleave", collapseSidebar);
 
-  mobileToggle.addEventListener("click", () => {
-    shell.classList.toggle("sidebar-mobile-open");
-  });
-
-  backdrop.addEventListener("click", () => {
-    shell.classList.remove("sidebar-mobile-open");
-  });
+  mobileToggle.addEventListener("click", () => shell.classList.toggle("sidebar-mobile-open"));
+  backdrop.addEventListener("click", () => shell.classList.remove("sidebar-mobile-open"));
 
   window.addEventListener("resize", () => {
     if (isDesktopViewport()) {
@@ -320,6 +362,11 @@ function initializeSidebar() {
 
   document.body.append(hoverZone, mobileToggle, backdrop);
   syncSidebarState();
+}
+
+function isReadOnly() {
+  const user = getStoredUser();
+  return user?.role === "principal";
 }
 
 async function initializeApp() {
@@ -341,6 +388,16 @@ async function initializeApp() {
     const user = await window.apiClient.getCurrentUser();
     window.localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
     renderCurrentUser(user);
+
+    // Check route permission
+    const currentPage = window.location.pathname.split("/").pop() || "dashboard.html";
+    const allowedPages = ROLE_NAV_MAP[user.role] || ROLE_NAV_MAP.teacher;
+    if (!allowedPages.includes(currentPage)) {
+      showToast("You don't have permission to access this page.", "error");
+      window.location.href = "/dashboard.html";
+      return { user };
+    }
+
     return { user };
   } catch (error) {
     clearAuthState();
@@ -350,16 +407,12 @@ async function initializeApp() {
 }
 
 function setLoading(target, message = "Loading...") {
-  if (!target) {
-    return;
-  }
-  target.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+  if (!target) return;
+  target.innerHTML = `<div class="loading-skeleton"><div class="skeleton-line"></div><div class="skeleton-line short"></div><div class="skeleton-line"></div></div>`;
 }
 
 function renderPagination(container, meta, onPageChange) {
-  if (!container || !meta) {
-    return;
-  }
+  if (!container || !meta) return;
 
   const totalPages = Math.max(1, Math.ceil(meta.total / meta.page_size));
   if (totalPages <= 1) {
@@ -368,20 +421,45 @@ function renderPagination(container, meta, onPageChange) {
   }
 
   container.innerHTML = `
-    <button class="btn btn-secondary" type="button" ${meta.page <= 1 ? "disabled" : ""} data-page="${
-      meta.page - 1
-    }">Previous</button>
+    <button class="btn btn-secondary" type="button" ${meta.page <= 1 ? "disabled" : ""} data-page="${meta.page - 1}">Previous</button>
     <span class="pagination-meta">Page ${meta.page} of ${totalPages}</span>
-    <button class="btn btn-secondary" type="button" ${
-      meta.page >= totalPages ? "disabled" : ""
-    } data-page="${meta.page + 1}">Next</button>
+    <button class="btn btn-secondary" type="button" ${meta.page >= totalPages ? "disabled" : ""} data-page="${meta.page + 1}">Next</button>
   `;
 
   container.querySelectorAll("[data-page]").forEach((button) => {
-    button.addEventListener("click", () => {
-      onPageChange(Number(button.dataset.page));
-    });
+    button.addEventListener("click", () => onPageChange(Number(button.dataset.page)));
   });
+}
+
+function relativeTime(dateString) {
+  const now = new Date();
+  const then = new Date(dateString);
+  const diffMs = now - then;
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHr = Math.floor(diffMs / 3600000);
+  const diffDay = Math.floor(diffMs / 86400000);
+
+  if (diffMin < 1) return "just now";
+  if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? "" : "s"} ago`;
+  if (diffHr < 24) return `${diffHr} hour${diffHr === 1 ? "" : "s"} ago`;
+  if (diffDay === 1) return `Yesterday at ${then.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  return then.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }) + ` at ${then.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function activityIcon(actionType) {
+  const map = {
+    ATTENDANCE_MARKED: "✅",
+    ATTENDANCE_CHANGED: "🔄",
+    STUDENT_ADDED: "👤",
+    STUDENT_EDITED: "👤",
+    STUDENT_DELETED: "🗑️",
+    DATA_RESET: "🗑️",
+    SETTINGS_CHANGED: "⚙️",
+    EXPORT_GENERATED: "📥",
+    LOGIN: "🔐",
+    LOGOUT: "🔐",
+  };
+  return map[actionType] || "📋";
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -401,7 +479,10 @@ window.appUi = {
   getStoredUser,
   getTodayDate,
   initializeApp,
+  isReadOnly,
   redirectToLogin,
+  relativeTime,
+  activityIcon,
   renderPagination,
   setAuthState,
   setLoading,
@@ -410,4 +491,5 @@ window.appUi = {
   showToast,
   statusBadge,
   STORAGE_KEYS,
+  ROLE_NAV_MAP,
 };

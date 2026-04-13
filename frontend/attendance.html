@@ -25,6 +25,8 @@
           <a class="nav-link" href="attendance.html" data-nav>Attendance</a>
           <a class="nav-link" href="records.html" data-nav>Records</a>
           <a class="nav-link" href="classes.html" data-nav>Classes</a>
+          <a class="nav-link" href="calendar.html" data-nav>Calendar</a>
+          <a class="nav-link" href="activity-log.html" data-nav>Activity Log</a>
           <a class="nav-link" href="settings.html" data-nav>Settings</a>
         </nav>
       </div>
@@ -35,12 +37,12 @@
       </div>
     </aside>
 
-    <main class="main-panel">
+    <main class="main-panel" data-readonly-for-principal>
       <header class="page-header">
         <div>
           <p class="eyebrow">Fast daily attendance</p>
           <h2>Attendance</h2>
-          <p>Select a class, review the roster, and mark absences in just a few taps.</p>
+          <p>Select a class, review the roster, and mark attendance with one tap per student. Use P/A/L keyboard shortcuts for speed.</p>
         </div>
       </header>
 
@@ -49,9 +51,7 @@
           <div class="toolbar-actions">
             <div class="field compact-field">
               <label for="attendance-class">Class</label>
-              <select class="select" id="attendance-class">
-                <option value="">All classes</option>
-              </select>
+              <select class="select" id="attendance-class"><option value="">All classes</option></select>
             </div>
             <div class="field compact-field">
               <label for="attendance-search">Search</label>
@@ -70,11 +70,11 @@
             </div>
           </div>
           <div class="hero-actions">
-            <button class="btn btn-secondary" id="voice-command-button" type="button">Voice Command</button>
+            <button class="btn btn-secondary" id="voice-command-button" type="button">🎤 Voice</button>
             <button class="btn btn-primary" id="save-attendance-button" type="button">Save Attendance</button>
           </div>
         </div>
-        <p class="helper-text" id="voice-command-feedback">Use voice commands like “mark attendance for CSE-A” or “save attendance”.</p>
+        <p class="helper-text" id="voice-command-feedback">Use voice commands like "mark roll 5 late" or "save attendance".</p>
         <div class="bulk-toolbar">
           <button class="btn btn-secondary" id="mark-all-present-button" type="button">✅ Mark All Present</button>
           <button class="btn btn-secondary" id="mark-all-absent-button" type="button">❌ Mark All Absent</button>
@@ -82,33 +82,57 @@
         </div>
       </section>
 
-      <section class="stats-row">
+      <div class="grace-period-banner" id="grace-period-banner" style="display:none;">
+        ℹ️ It's past the grace period (9:10 AM). Students arriving now will be suggested as Late.
+      </div>
+
+      <section class="stats-row five-col">
         <article class="stat-card">
-          <span>Total students</span>
+          <span>Total</span>
           <strong id="attendance-total">0</strong>
         </article>
         <article class="stat-card">
-          <span>Present</span>
+          <span>✅ Present</span>
           <strong id="attendance-present">0</strong>
         </article>
         <article class="stat-card">
-          <span>Absent</span>
-          <strong id="attendance-absent">0</strong>
-        </article>
-        <article class="stat-card">
-          <span>Late</span>
+          <span>🕐 Late</span>
           <strong id="attendance-late">0</strong>
         </article>
         <article class="stat-card">
-          <span>Quick status</span>
-          <strong id="attendance-quick-counter">Present: 0 | Absent: 0 | Unmarked: 0</strong>
+          <span>❌ Absent</span>
+          <strong id="attendance-absent">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>📊 Unmarked</span>
+          <strong id="attendance-unmarked">0</strong>
         </article>
       </section>
 
       <section class="card">
         <h3>Roster</h3>
-        <p class="section-copy">Students are listed with roll numbers first. Tap a row once to mark absent, tap again to return present, or use the small late button if needed.</p>
+        <p class="section-copy">Each student has 3 buttons: Present, Late, Absent. Only one can be active at a time. Keyboard: P / A / L / ↑ / ↓ / Enter to save.</p>
         <div id="attendance-container" class="attendance-list"></div>
+      </section>
+
+      <section class="card" id="late-arrivals-section">
+        <h3>🕐 Late Arrivals</h3>
+        <p class="section-copy">Students marked as late, sorted by most recent. Students late 3+ times this week are flagged.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Roll No</th>
+                <th>Name</th>
+                <th>Class</th>
+                <th>Arrived At</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="late-arrivals-body"></tbody>
+          </table>
+        </div>
       </section>
 
       <div class="sticky-save-bar">

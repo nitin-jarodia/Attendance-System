@@ -4,11 +4,11 @@ from datetime import date, datetime, timedelta
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from app.models.activity_log import ActivityLog
 from app.models.attendance import Attendance
 from app.models.reset_snapshot import ResetSnapshot
 from app.models.user import User
 from app.schemas.settings import ActivityLogRead, ActivityLogResponse, ResetResponse
+from app.services.activity_service import get_activity_logs, log_activity
 
 
 UNDO_WINDOW_SECONDS = 10
@@ -26,10 +26,6 @@ def _serialize_attendance_records(records: list[Attendance]) -> str:
     return json.dumps(payload)
 
 
-def _log_activity(db: Session, actor_username: str, action: str, details: str) -> None:
-    db.add(ActivityLog(actor_username=actor_username, action=action, details=details))
-
-
 def reset_attendance_for_date(db: Session, *, actor: User, target_date: date) -> ResetResponse:
     records = list(db.scalars(select(Attendance).where(Attendance.date == target_date)).all())
     snapshot = ResetSnapshot(
@@ -44,11 +40,13 @@ def reset_attendance_for_date(db: Session, *, actor: User, target_date: date) ->
     if records:
         db.execute(delete(Attendance).where(Attendance.date == target_date))
 
-    _log_activity(
+    log_activity(
         db,
-        actor.username,
-        "reset_day",
-        f"Reset attendance data for {target_date.isoformat()} ({len(records)} records removed).",
+        action_type="DATA_RESET",
+        user=actor,
+        details=f"Reset attendance data for {target_date.isoformat()} ({len(records)} records removed).",
+        target_type="attendance",
+        target_name=target_date.isoformat(),
     )
     db.commit()
     db.refresh(snapshot)
@@ -79,11 +77,13 @@ def reset_all_attendance(db: Session, *, actor: User, confirmation_text: str) ->
     if records:
         db.execute(delete(Attendance))
 
-    _log_activity(
+    log_activity(
         db,
-        actor.username,
-        "reset_all",
-        f"Reset all attendance data ({len(records)} records removed).",
+        action_type="DATA_RESET",
+        user=actor,
+        details=f"Reset all attendance data ({len(records)} records removed).",
+        target_type="attendance",
+        target_name="all",
     )
     db.commit()
     db.refresh(snapshot)
@@ -129,11 +129,13 @@ def undo_reset(db: Session, *, actor: User, snapshot_id: int) -> ResetResponse:
         restored_count += 1
 
     snapshot.restored_at = datetime.utcnow()
-    _log_activity(
+    log_activity(
         db,
-        actor.username,
-        "undo_reset",
-        f"Restored {restored_count} attendance records from reset snapshot #{snapshot_id}.",
+        action_type="DATA_RESET",
+        user=actor,
+        details=f"Restored {restored_count} attendance records from reset snapshot #{snapshot_id}.",
+        target_type="attendance",
+        target_name=f"snapshot-{snapshot_id}",
     )
     db.commit()
 
@@ -146,19 +148,40 @@ def undo_reset(db: Session, *, actor: User, snapshot_id: int) -> ResetResponse:
     )
 
 
-def get_activity_log(db: Session, *, limit: int = 50) -> ActivityLogResponse:
-    rows = list(
-        db.scalars(select(ActivityLog).order_by(ActivityLog.created_at.desc()).limit(limit)).all()
+def get_activity_log(
+    db: Session,
+    *,
+    action_type: str | None = None,
+    performer_name: str | None = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> ActivityLogResponse:
+    rows, total = get_activity_logs(
+        db,
+        action_type=action_type,
+        performer_name=performer_name,
+        page=page,
+        page_size=page_size,
     )
     return ActivityLogResponse(
         items=[
             ActivityLogRead(
                 id=row.id,
-                actor_username=row.actor_username,
-                action=row.action,
+                action_type=row.action_type or row.action or "",
+                performed_by=row.performed_by or 0,
+                performer_name=row.performer_name or row.actor_username or "",
+                performer_role=row.performer_role,
+                target_type=row.target_type,
+                target_id=row.target_id,
+                target_name=row.target_name,
                 details=row.details,
+                previous_value=row.previous_value,
+                new_value=row.new_value,
                 created_at=row.created_at,
             )
             for row in rows
-        ]
+        ],
+        total=total,
+        page=page,
+        page_size=page_size,
     )

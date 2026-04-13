@@ -19,6 +19,10 @@ class Attendance(Base):
     )
     date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
+    late_arrival_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    previous_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    edited_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    edited_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime,
         nullable=False,

@@ -13,22 +13,30 @@
   <main class="login-shell">
     <section class="login-card">
       <p class="eyebrow">Secure access</p>
-      <h1>Attendance Management System</h1>
+      <h1>Attendance Pro</h1>
       <p class="section-copy">Sign in to open your dashboard, classes, reports, and attendance tools.</p>
-      <form id="login-form">
-        <div class="field">
+      <form id="login-form" style="margin-top:20px;">
+        <div class="field" style="margin-bottom:14px;">
           <label for="username">Username</label>
           <input class="input" id="username" name="username" type="text" autocomplete="username" required>
         </div>
-        <div class="field">
+        <div class="field" style="margin-bottom:14px;">
           <label for="password">Password</label>
           <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
         </div>
-        <div class="actions">
+        <div class="actions" style="margin-top:16px;">
           <button class="btn btn-primary full-width" type="submit">Login</button>
         </div>
       </form>
-      <div class="helper-text">
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+        <p class="muted" style="text-align:center;margin-bottom:10px;font-size:0.82rem;">Demo Mode — Quick Login</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-secondary" type="button" style="flex:1;font-size:0.82rem;" data-demo-login="admin">Login as Admin</button>
+          <button class="btn btn-secondary" type="button" style="flex:1;font-size:0.82rem;" data-demo-login="teacher">Login as Teacher</button>
+          <button class="btn btn-secondary" type="button" style="flex:1;font-size:0.82rem;" data-demo-login="principal">Login as Principal</button>
+        </div>
+      </div>
+      <div class="helper-text" style="margin-top:12px;">
         Default admin credentials come from your environment configuration.
       </div>
     </section>

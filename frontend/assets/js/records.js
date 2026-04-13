@@ -44,18 +44,23 @@ async function loadRecords(page = currentPage) {
     return;
   }
 
+  const readOnly = window.appUi.isReadOnly();
   recordsTableBody.innerHTML = response.items
     .map(
-      (record) => `
+      (record) => {
+        const editedTag = record.edited_by
+          ? `<span class="edited-badge" title="Changed from ${window.appUi.escapeHtml(record.previous_status || '?')} by ${window.appUi.escapeHtml(record.edited_by)}${record.edited_at ? ' at ' + new Date(record.edited_at).toLocaleTimeString() : ''}">edited</span>`
+          : "";
+        return `
         <tr>
           <td>${record.date}</td>
           <td>${record.roll_number}</td>
           <td>${window.appUi.escapeHtml(record.name)}</td>
           <td>${window.appUi.escapeHtml(record.class_name || "Unassigned")}</td>
-          <td>${window.appUi.statusBadge(record.status)}</td>
+          <td>${window.appUi.statusBadge(record.status)} ${editedTag}</td>
           <td>
             <div class="inline-actions">
-              <select class="select record-status-select" data-roll="${record.roll_number}" data-date="${record.date}">
+              <select class="select record-status-select" data-roll="${record.roll_number}" data-date="${record.date}" ${readOnly ? "disabled" : ""}>
                 ${["present", "absent", "late"]
                   .map(
                     (status) => `
@@ -64,18 +69,19 @@ async function loadRecords(page = currentPage) {
                   )
                   .join("")}
               </select>
-              <button type="button" class="btn btn-secondary save-row-button" data-roll="${record.roll_number}" data-date="${record.date}">
+              <button type="button" class="btn btn-secondary save-row-button" data-roll="${record.roll_number}" data-date="${record.date}" ${readOnly ? "disabled" : ""}>
                 Save
               </button>
             </div>
           </td>
           <td>
-            <button type="button" class="btn btn-danger delete-row-button" data-roll="${record.roll_number}" data-date="${record.date}">
+            <button type="button" class="btn btn-danger delete-row-button" data-roll="${record.roll_number}" data-date="${record.date}" ${readOnly ? "disabled" : ""}>
               Delete
             </button>
           </td>
         </tr>
-      `
+      `;
+      }
     )
     .join("");
   window.appUi.renderPagination(paginationEl, response, loadRecords);

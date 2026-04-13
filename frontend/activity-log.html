@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Activity Log | Attendance Management System</title>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <script src="/assets/js/api.js" defer></script>
+  <script src="/assets/js/common.js" defer></script>
+  <script src="/assets/js/activity-log.js" defer></script>
+</head>
+<body>
+  <div class="shell-layout">
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-brand">
+          <h1>Attendance Pro</h1>
+          <p>School attendance workspace</p>
+        </div>
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="dashboard.html" data-nav>Dashboard</a>
+          <a class="nav-link" href="analytics.html" data-nav>Analytics</a>
+          <a class="nav-link" href="students.html" data-nav>Students</a>
+          <a class="nav-link" href="attendance.html" data-nav>Attendance</a>
+          <a class="nav-link" href="records.html" data-nav>Records</a>
+          <a class="nav-link" href="classes.html" data-nav>Classes</a>
+          <a class="nav-link" href="calendar.html" data-nav>Calendar</a>
+          <a class="nav-link" href="activity-log.html" data-nav>Activity Log</a>
+          <a class="nav-link" href="settings.html" data-nav>Settings</a>
+        </nav>
+      </div>
+      <div class="sidebar-user">
+        <strong data-user-name>Loading...</strong>
+        <span data-user-role></span>
+        <button class="btn btn-secondary" type="button" data-logout>Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Accountability & transparency</p>
+          <h2>📝 Activity Log</h2>
+          <p>Every action in the system is recorded here. Filter by action type or user to find specific events.</p>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <div class="field compact-field">
+              <label for="filter-action-type">Action Type</label>
+              <select class="select" id="filter-action-type">
+                <option value="">All Types</option>
+                <option value="ATTENDANCE_MARKED">Attendance Marked</option>
+                <option value="ATTENDANCE_CHANGED">Attendance Changed</option>
+                <option value="STUDENT_ADDED">Student Added</option>
+                <option value="DATA_RESET">Data Reset</option>
+                <option value="SETTINGS_CHANGED">Settings Changed</option>
+                <option value="EXPORT_GENERATED">Export Generated</option>
+              </select>
+            </div>
+            <div class="field compact-field">
+              <label for="filter-performer">User</label>
+              <input class="input" id="filter-performer" type="text" placeholder="Username">
+            </div>
+          </div>
+        </div>
+
+        <div class="activity-feed" id="activity-feed"></div>
+        <div class="pagination" id="activity-pagination"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toast-root"></div>
+</body>
+</html>

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator
@@ -13,6 +13,7 @@ class AttendanceStatus(str, Enum):
 class AttendanceMarkItem(BaseModel):
     roll_number: int = Field(gt=0)
     status: AttendanceStatus
+    late_arrival_time: datetime | None = None
 
 
 class AttendanceMarkRequest(BaseModel):
@@ -32,6 +33,7 @@ class AttendanceUpdateRequest(BaseModel):
     roll_number: int = Field(gt=0)
     date: date
     status: AttendanceStatus
+    late_arrival_time: datetime | None = None
 
 
 class AttendanceDeleteRequest(BaseModel):
@@ -46,6 +48,10 @@ class AttendanceRecordRead(BaseModel):
     date: date
     class_id: int | None = None
     class_name: str | None = None
+    late_arrival_time: datetime | None = None
+    previous_status: str | None = None
+    edited_by: str | None = None
+    edited_at: datetime | None = None
 
 
 class AttendanceMarkResponse(BaseModel):
@@ -63,6 +69,23 @@ class AttendanceDeleteResponse(BaseModel):
 
 class AttendanceSearchResponse(BaseModel):
     items: list[AttendanceRecordRead]
+    total: int
+    page: int
+    page_size: int
+
+
+class LateArrivalRead(BaseModel):
+    roll_number: int
+    name: str
+    class_id: int | None = None
+    class_name: str | None = None
+    date: date
+    late_arrival_time: datetime | None = None
+    late_count_this_week: int = 0
+
+
+class LateArrivalsResponse(BaseModel):
+    items: list[LateArrivalRead]
     total: int
     page: int
     page_size: int

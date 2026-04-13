@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class UserRole(str, Enum):
     admin = "admin"
     teacher = "teacher"
+    principal = "principal"
 
 
 class LoginRequest(BaseModel):

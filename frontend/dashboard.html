@@ -25,6 +25,8 @@
           <a class="nav-link" href="attendance.html" data-nav>Attendance</a>
           <a class="nav-link" href="records.html" data-nav>Records</a>
           <a class="nav-link" href="classes.html" data-nav>Classes</a>
+          <a class="nav-link" href="calendar.html" data-nav>Calendar</a>
+          <a class="nav-link" href="activity-log.html" data-nav>Activity Log</a>
           <a class="nav-link" href="settings.html" data-nav>Settings</a>
         </nav>
       </div>
@@ -66,31 +68,29 @@
       <section class="grid two">
         <article class="card">
           <h3>AI Attendance Insight</h3>
-          <p class="section-copy">Natural-language summary generated from today's attendance with fallback if AI is unavailable.</p>
+          <p class="section-copy">Natural-language summary generated from today's attendance.</p>
           <div id="dashboard-ai-summary" class="insight-text">Loading insights...</div>
           <p class="helper-text" id="dashboard-ai-fallback"></p>
         </article>
         <article class="card">
-          <h3>Advanced Insights</h3>
-          <p class="section-copy">Open the Analytics page for trend charts, risk alerts, and voice-guided navigation.</p>
-          <div class="inline-actions">
-            <a class="btn btn-primary" href="analytics.html">Open Analytics</a>
-            <a class="btn btn-secondary" href="attendance.html">Mark Attendance</a>
-            <a class="btn btn-secondary" href="settings.html">Settings</a>
-          </div>
+          <h3>📅 Upcoming Holidays</h3>
+          <div id="dashboard-upcoming-holidays"></div>
+          <a class="btn btn-secondary" href="calendar.html" style="margin-top:12px;display:inline-block;">Open Calendar</a>
         </article>
       </section>
 
       <section class="grid two">
         <article class="card">
-          <h3>Recent Activity</h3>
-          <div id="recent-activity"></div>
+          <h3>📝 Recent Activity</h3>
+          <p class="section-copy">Last 5 actions across the system.</p>
+          <div class="activity-feed" id="dashboard-recent-activity"></div>
+          <a class="btn btn-secondary" href="activity-log.html" style="margin-top:12px;display:inline-block;">View All →</a>
         </article>
         <article class="card">
           <div class="toolbar">
             <div>
               <h3>Low Attendance Students</h3>
-              <p class="section-copy">Students below the attendance threshold are highlighted here.</p>
+              <p class="section-copy">Students below the attendance threshold.</p>
             </div>
             <div class="field compact-field">
               <label for="analytics-threshold">Threshold %</label>
@@ -100,12 +100,7 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr>
-                  <th>Roll</th>
-                  <th>Name</th>
-                  <th>Class</th>
-                  <th>Attendance %</th>
-                </tr>
+                <tr><th>Roll</th><th>Name</th><th>Class</th><th>Attendance %</th></tr>
               </thead>
               <tbody id="low-attendance-body"></tbody>
             </table>
@@ -115,14 +110,9 @@
 
       <section class="card">
         <div class="toolbar">
-          <div>
-            <h3>Weekly Attendance Trend</h3>
-            <p class="section-copy">A simple weekly trend so teachers can spot dips quickly.</p>
-          </div>
+          <div><h3>Weekly Attendance Trend</h3><p class="section-copy">Spot dips quickly with this weekly view.</p></div>
         </div>
-        <div class="chart-shell">
-          <canvas id="dashboard-weekly-chart"></canvas>
-        </div>
+        <div class="chart-shell"><canvas id="dashboard-weekly-chart"></canvas></div>
       </section>
 
       <section class="card">
@@ -131,14 +121,7 @@
         <div class="table-wrap">
           <table>
             <thead>
-              <tr>
-                <th>Class</th>
-                <th>Total Students</th>
-                <th>Present</th>
-                <th>Absent</th>
-                <th>Late</th>
-                <th>Attendance %</th>
-              </tr>
+              <tr><th>Class</th><th>Total Students</th><th>Present</th><th>Absent</th><th>Late</th><th>Attendance %</th></tr>
             </thead>
             <tbody id="class-analytics-body"></tbody>
           </table>

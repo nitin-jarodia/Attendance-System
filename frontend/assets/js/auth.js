@@ -17,6 +17,32 @@ loginForm?.addEventListener("submit", async (event) => {
   }
 });
 
+document.querySelectorAll("[data-demo-login]").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const role = btn.dataset.demoLogin;
+    const credentials = {
+      admin: { username: "admin", password: "admin1234" },
+      teacher: { username: "admin", password: "admin1234" },
+      principal: { username: "admin", password: "admin1234" },
+    };
+    const creds = credentials[role] || credentials.admin;
+
+    try {
+      const response = await window.apiClient.login(creds);
+      window.appUi.setAuthState(response.access_token, response.user);
+
+      if (role !== response.user.role) {
+        const switchResult = await window.apiClient.demoSwitchRole(role);
+        window.appUi.setAuthState(switchResult.access_token, switchResult.user);
+      }
+
+      window.location.href = "/dashboard.html";
+    } catch (error) {
+      window.appUi.showToast(`Demo login failed: ${error.message}. Make sure the default admin account exists.`, "error");
+    }
+  });
+});
+
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     await window.appUi.initializeApp();

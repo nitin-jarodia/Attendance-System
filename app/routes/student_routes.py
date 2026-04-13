@@ -12,6 +12,7 @@ from app.schemas.student import (
     StudentRead,
     StudentSearchResponse,
 )
+from app.services.activity_service import log_activity
 from app.services.student_service import (
     assign_student_class,
     bulk_create_students,
@@ -28,17 +29,28 @@ router = APIRouter(prefix="/students", tags=["students"])
 def add_student(
     payload: StudentCreate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),
+    current_user: User = Depends(require_admin),
 ) -> StudentRead:
     try:
         student = create_student(db, payload)
-        return StudentRead(
+        result = StudentRead(
             id=student.id,
             roll_number=student.roll_number,
             name=student.name,
             class_id=student.class_id,
             class_name=student.classroom.name if student.classroom else None,
         )
+        log_activity(
+            db,
+            action_type="STUDENT_ADDED",
+            user=current_user,
+            details=f"Added student: {student.name} (Roll #{student.roll_number})",
+            target_type="student",
+            target_id=student.roll_number,
+            target_name=student.name,
+        )
+        db.commit()
+        return result
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
@@ -47,10 +59,19 @@ def add_student(
 def bulk_add_students(
     payload: BulkStudentCreate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_admin),
+    current_user: User = Depends(require_admin),
 ) -> BulkStudentResult:
     try:
-        return bulk_create_students(db, payload.raw_text, payload.class_id)
+        result = bulk_create_students(db, payload.raw_text, payload.class_id)
+        log_activity(
+            db,
+            action_type="STUDENT_ADDED",
+            user=current_user,
+            details=f"Bulk added {result.created_count} students",
+            target_type="student",
+        )
+        db.commit()
+        return result
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 

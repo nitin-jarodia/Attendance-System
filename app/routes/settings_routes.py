@@ -3,7 +3,7 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import require_admin
+from app.auth.dependencies import require_admin, require_roles
 from app.db.database import get_db
 from app.models.user import User
 from app.schemas.settings import (
@@ -23,14 +23,25 @@ from app.services.settings_service import (
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 
+require_admin_or_principal = require_roles("admin", "principal")
+
 
 @router.get("/activity-log", response_model=ActivityLogResponse)
 def activity_log(
-    limit: int = Query(default=50, ge=1, le=200),
+    action_type: str | None = Query(default=None),
+    performer_name: str | None = Query(default=None),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_admin),
+    current_user: User = Depends(require_admin_or_principal),
 ) -> ActivityLogResponse:
-    return get_activity_log(db, limit=limit)
+    return get_activity_log(
+        db,
+        action_type=action_type,
+        performer_name=performer_name,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.post("/reset/day", response_model=ResetResponse)

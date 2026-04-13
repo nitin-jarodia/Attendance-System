@@ -1,6 +1,6 @@
 import csv
 import io
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import String, and_, cast, func, or_, select
 from sqlalchemy.exc import IntegrityError
@@ -18,11 +18,13 @@ from app.schemas.attendance import (
     AttendanceSearchResponse,
     AttendanceStatus,
     AttendanceUpdateRequest,
+    LateArrivalRead,
+    LateArrivalsResponse,
 )
 
 
 def _resolve_class_scope(class_id: int | None, current_user: User) -> int | None:
-    if current_user.role != "teacher":
+    if current_user.role in ("admin", "principal"):
         return class_id
 
     if current_user.assigned_class_id is None:
@@ -66,6 +68,10 @@ def _serialize_attendance_row(row) -> AttendanceRecordRead:
         date=row.date,
         class_id=row.class_id,
         class_name=row.class_name,
+        late_arrival_time=getattr(row, "late_arrival_time", None),
+        previous_status=getattr(row, "previous_status", None),
+        edited_by=getattr(row, "edited_by", None),
+        edited_at=getattr(row, "edited_at", None),
     )
 
 
@@ -86,6 +92,10 @@ def list_attendance_by_date(
             Attendance.date,
             Student.class_id,
             Classroom.name.label("class_name"),
+            Attendance.late_arrival_time,
+            Attendance.previous_status,
+            Attendance.edited_by,
+            Attendance.edited_at,
         )
         .join(Student, Student.roll_number == Attendance.roll_number)
         .outerjoin(Classroom, Classroom.id == Student.class_id)
@@ -124,6 +134,10 @@ def search_attendance(
             Attendance.date,
             Student.class_id,
             Classroom.name.label("class_name"),
+            Attendance.late_arrival_time,
+            Attendance.previous_status,
+            Attendance.edited_by,
+            Attendance.edited_at,
         )
         .join(Student, Student.roll_number == Attendance.roll_number)
         .outerjoin(Classroom, Classroom.id == Student.class_id)
@@ -180,9 +194,15 @@ def mark_attendance(db: Session, payload: AttendanceMarkRequest, current_user: U
 
     for record in payload.records:
         existing_record = existing_records.get(record.roll_number)
+        late_time = record.late_arrival_time if record.status == AttendanceStatus.late else None
+
         if existing_record:
             if existing_record.status != record.status.value:
+                existing_record.previous_status = existing_record.status
+                existing_record.edited_by = current_user.username
+                existing_record.edited_at = datetime.utcnow()
                 existing_record.status = record.status.value
+            existing_record.late_arrival_time = late_time
             updated_count += 1
             continue
 
@@ -191,6 +211,7 @@ def mark_attendance(db: Session, payload: AttendanceMarkRequest, current_user: U
                 roll_number=record.roll_number,
                 date=payload.date,
                 status=record.status.value,
+                late_arrival_time=late_time,
             )
         )
         created_count += 1
@@ -233,7 +254,12 @@ def update_attendance(
         raise LookupError("Attendance record not found.")
 
     attendance = row.Attendance
+    if attendance.status != payload.status.value:
+        attendance.previous_status = attendance.status
+        attendance.edited_by = current_user.username
+        attendance.edited_at = datetime.utcnow()
     attendance.status = payload.status.value
+    attendance.late_arrival_time = payload.late_arrival_time if payload.status == AttendanceStatus.late else None
     db.commit()
     return _serialize_attendance_row(
         type(
@@ -246,6 +272,10 @@ def update_attendance(
                 "date": attendance.date,
                 "class_id": row.class_id,
                 "class_name": row.class_name,
+                "late_arrival_time": attendance.late_arrival_time,
+                "previous_status": attendance.previous_status,
+                "edited_by": attendance.edited_by,
+                "edited_at": attendance.edited_at,
             },
         )()
     )
@@ -283,12 +313,96 @@ def delete_attendance(
                 "date": attendance.date,
                 "class_id": row.class_id,
                 "class_name": row.class_name,
+                "late_arrival_time": attendance.late_arrival_time,
+                "previous_status": attendance.previous_status,
+                "edited_by": attendance.edited_by,
+                "edited_at": attendance.edited_at,
             },
         )()
     )
     db.delete(attendance)
     db.commit()
     return deleted_record
+
+
+def get_late_arrivals(
+    db: Session,
+    current_user: User,
+    *,
+    start_date: date | None = None,
+    end_date: date | None = None,
+    class_id: int | None = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> LateArrivalsResponse:
+    effective_class_id = _resolve_class_scope(class_id, current_user)
+
+    filters = [Attendance.status == "late"]
+    if start_date:
+        filters.append(Attendance.date >= start_date)
+    if end_date:
+        filters.append(Attendance.date <= end_date)
+    if effective_class_id:
+        filters.append(Student.class_id == effective_class_id)
+
+    total = db.scalar(
+        select(func.count(Attendance.id))
+        .select_from(Attendance)
+        .join(Student, Student.roll_number == Attendance.roll_number)
+        .where(*filters)
+    ) or 0
+
+    # Week boundary for this-week late count
+    today = date.today()
+    week_start = today - timedelta(days=today.weekday())
+
+    week_late_subquery = (
+        select(
+            Attendance.roll_number,
+            func.count(Attendance.id).label("late_count_week"),
+        )
+        .where(
+            Attendance.status == "late",
+            Attendance.date >= week_start,
+            Attendance.date <= today,
+        )
+        .group_by(Attendance.roll_number)
+        .subquery()
+    )
+
+    statement = (
+        select(
+            Attendance.roll_number,
+            Student.name,
+            Student.class_id,
+            Classroom.name.label("class_name"),
+            Attendance.date,
+            Attendance.late_arrival_time,
+            func.coalesce(week_late_subquery.c.late_count_week, 0).label("late_count_this_week"),
+        )
+        .join(Student, Student.roll_number == Attendance.roll_number)
+        .outerjoin(Classroom, Classroom.id == Student.class_id)
+        .outerjoin(week_late_subquery, week_late_subquery.c.roll_number == Attendance.roll_number)
+        .where(*filters)
+        .order_by(Attendance.date.desc(), Attendance.roll_number.asc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    rows = db.execute(statement).all()
+    items = [
+        LateArrivalRead(
+            roll_number=row.roll_number,
+            name=row.name,
+            class_id=row.class_id,
+            class_name=row.class_name,
+            date=row.date,
+            late_arrival_time=row.late_arrival_time,
+            late_count_this_week=row.late_count_this_week,
+        )
+        for row in rows
+    ]
+
+    return LateArrivalsResponse(items=items, total=total, page=page, page_size=page_size)
 
 
 def build_csv_export(

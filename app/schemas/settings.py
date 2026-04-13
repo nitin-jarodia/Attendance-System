@@ -25,11 +25,21 @@ class ResetResponse(BaseModel):
 
 class ActivityLogRead(BaseModel):
     id: int
-    actor_username: str
-    action: str
+    action_type: str
+    performed_by: int
+    performer_name: str
+    performer_role: str | None = None
+    target_type: str | None = None
+    target_id: int | None = None
+    target_name: str | None = None
     details: str
+    previous_value: str | None = None
+    new_value: str | None = None
     created_at: datetime
 
 
 class ActivityLogResponse(BaseModel):
     items: list[ActivityLogRead]
+    total: int
+    page: int
+    page_size: int

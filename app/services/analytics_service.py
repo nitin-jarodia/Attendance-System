@@ -32,7 +32,7 @@ def _date_join_filters(start_date: date | None, end_date: date | None) -> list:
 
 
 def _resolve_class_scope(current_user: User, class_id: int | None) -> int | None:
-    if current_user.role != "teacher":
+    if current_user.role in ("admin", "principal"):
         return class_id
 
     if current_user.assigned_class_id is None:

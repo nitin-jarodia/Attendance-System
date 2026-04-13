@@ -64,7 +64,7 @@ def list_users(db: Session) -> list[UserRead]:
 
 
 def create_user(db: Session, payload: UserCreate) -> UserRead:
-    if payload.role == "teacher" and payload.assigned_class_id is None:
+    if payload.role.value == "teacher" and payload.assigned_class_id is None:
         raise ValueError("Teacher accounts must be assigned to a class.")
 
     class_name = None
