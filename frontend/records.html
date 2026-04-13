@@ -10,49 +10,82 @@
   <script src="/assets/js/records.js" defer></script>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="topbar-inner">
-        <div class="brand">
-          <h1>Attendance Management System</h1>
-          <p>Review, correct, delete, and export saved attendance records.</p>
+  <div class="shell-layout">
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-brand">
+          <h1>Attendance Pro</h1>
+          <p>Tier 2 management suite</p>
         </div>
-        <nav class="nav-links">
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="dashboard.html" data-nav>Dashboard</a>
           <a class="nav-link" href="students.html" data-nav>Students</a>
-          <a class="nav-link" href="attendance.html" data-nav>Mark Attendance</a>
+          <a class="nav-link" href="attendance.html" data-nav>Attendance</a>
           <a class="nav-link" href="records.html" data-nav>Records</a>
+          <a class="nav-link" href="classes.html" data-nav>Classes</a>
         </nav>
       </div>
-    </header>
+      <div class="sidebar-user">
+        <strong data-user-name>Loading...</strong>
+        <span data-user-role></span>
+        <button class="btn btn-secondary" type="button" data-logout>Logout</button>
+      </div>
+    </aside>
 
-    <main class="page-content">
-      <section class="hero">
+    <main class="main-panel">
+      <header class="page-header">
         <div>
+          <p class="eyebrow">Search & audit</p>
           <h2>Attendance Records</h2>
-          <p>Filter records by date, edit statuses inline, remove incorrect entries, and export the selected day to CSV.</p>
+          <p>Filter records by date, class, status, or student search terms, then export or correct them inline.</p>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <div class="field compact-field">
+              <label for="records-date">Date</label>
+              <input class="input" id="records-date" type="date">
+            </div>
+            <div class="field compact-field">
+              <label for="records-class">Class</label>
+              <select class="select" id="records-class">
+                <option value="">All classes</option>
+              </select>
+            </div>
+            <div class="field compact-field">
+              <label for="records-status">Status</label>
+              <select class="select" id="records-status">
+                <option value="">All statuses</option>
+                <option value="present">Present</option>
+                <option value="absent">Absent</option>
+                <option value="late">Late</option>
+              </select>
+            </div>
+            <div class="field compact-field">
+              <label for="records-search">Search</label>
+              <input class="input" id="records-search" type="text" placeholder="Name or roll number">
+            </div>
+          </div>
+          <div class="hero-actions">
+            <div class="muted">Total records: <strong id="records-total">0</strong></div>
+            <button class="btn btn-export" id="export-button" type="button">Export CSV</button>
+          </div>
         </div>
       </section>
 
-      <section class="toolbar card">
-        <div class="field">
-          <label for="records-date">Select Date</label>
-          <input class="input" id="records-date" type="date">
-        </div>
-        <div class="hero-actions">
-          <div class="muted">Total records: <strong id="records-total">0</strong></div>
-          <button class="btn btn-export" id="export-button" type="button">Export CSV</button>
-        </div>
-      </section>
-
-      <section class="card" style="margin-top: 20px;">
+      <section class="card">
         <h3>Saved Records</h3>
-        <p class="section-copy">Each row can be corrected without creating a duplicate record for the same student and date.</p>
+        <p class="section-copy">Each row can be corrected without creating duplicate attendance for the same student and date.</p>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
+                <th>Date</th>
                 <th>Roll</th>
                 <th>Name</th>
+                <th>Class</th>
                 <th>Status</th>
                 <th>Edit</th>
                 <th>Delete</th>
@@ -61,10 +94,11 @@
             <tbody id="records-table-body"></tbody>
           </table>
         </div>
+        <div class="pagination" id="records-pagination"></div>
       </section>
     </main>
-
-    <div class="toast-stack" id="toast-root"></div>
   </div>
+
+  <div class="toast-stack" id="toast-root"></div>
 </body>
 </html>

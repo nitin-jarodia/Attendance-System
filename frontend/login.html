@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login | Attendance Management System</title>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <script src="/assets/js/api.js" defer></script>
+  <script src="/assets/js/common.js" defer></script>
+  <script src="/assets/js/auth.js" defer></script>
+</head>
+<body data-public-page="true">
+  <main class="login-shell">
+    <section class="login-card">
+      <p class="eyebrow">Secure access</p>
+      <h1>Attendance Management System</h1>
+      <p class="section-copy">Sign in to access the Tier 2 dashboard, class management, analytics, and attendance tools.</p>
+      <form id="login-form">
+        <div class="field">
+          <label for="username">Username</label>
+          <input class="input" id="username" name="username" type="text" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input class="input" id="password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary full-width" type="submit">Login</button>
+        </div>
+      </form>
+      <div class="helper-text">
+        Default admin credentials come from your environment configuration.
+      </div>
+    </section>
+  </main>
+
+  <div class="toast-stack" id="toast-root"></div>
+</body>
+</html>

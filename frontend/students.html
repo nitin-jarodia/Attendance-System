@@ -10,28 +10,36 @@
   <script src="/assets/js/students.js" defer></script>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="topbar-inner">
-        <div class="brand">
-          <h1>Attendance Management System</h1>
-          <p>Manage your student roster and import data safely.</p>
+  <div class="shell-layout">
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-brand">
+          <h1>Attendance Pro</h1>
+          <p>Tier 2 management suite</p>
         </div>
-        <nav class="nav-links">
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="dashboard.html" data-nav>Dashboard</a>
           <a class="nav-link" href="students.html" data-nav>Students</a>
-          <a class="nav-link" href="attendance.html" data-nav>Mark Attendance</a>
+          <a class="nav-link" href="attendance.html" data-nav>Attendance</a>
           <a class="nav-link" href="records.html" data-nav>Records</a>
+          <a class="nav-link" href="classes.html" data-nav>Classes</a>
         </nav>
       </div>
-    </header>
+      <div class="sidebar-user">
+        <strong data-user-name>Loading...</strong>
+        <span data-user-role></span>
+        <button class="btn btn-secondary" type="button" data-logout>Logout</button>
+      </div>
+    </aside>
 
-    <main class="page-content">
-      <section class="hero">
+    <main class="main-panel">
+      <header class="page-header">
         <div>
-          <h2>Student Management</h2>
-          <p>Add individual students or upload multiple entries at once. Duplicate roll numbers are blocked and invalid rows are safely skipped.</p>
+          <p class="eyebrow">Roster & assignment</p>
+          <h2>Students</h2>
+          <p>Search, assign classes, import rosters, and manage student records without disturbing Tier 1 flows.</p>
         </div>
-      </section>
+      </header>
 
       <section class="stats-row">
         <article class="stat-card">
@@ -40,10 +48,10 @@
         </article>
       </section>
 
-      <section class="grid two">
+      <section class="grid two" data-admin-only>
         <article class="card">
           <h3>Add Single Student</h3>
-          <p class="section-copy">Create a single student record with unique roll number validation.</p>
+          <p class="section-copy">Create a student and optionally place them into a class immediately.</p>
           <form id="add-student-form">
             <div class="form-grid">
               <div class="field">
@@ -54,6 +62,12 @@
                 <label for="name">Student Name</label>
                 <input class="input" id="name" name="name" type="text" maxlength="255" required>
               </div>
+              <div class="field full-width">
+                <label for="student-class-id">Class</label>
+                <select class="select" id="student-class-id" name="class_id">
+                  <option value="">Unassigned</option>
+                </select>
+              </div>
             </div>
             <div class="actions">
               <button class="btn btn-primary" type="submit">Add Student</button>
@@ -63,8 +77,14 @@
 
         <article class="card">
           <h3>Bulk Upload</h3>
-          <p class="section-copy">Paste one student per line in the format <code>roll_number,name</code>.</p>
+          <p class="section-copy">Paste one student per line in the format <code>roll_number,name</code> and optionally apply a class to the batch.</p>
           <form id="bulk-student-form">
+            <div class="field">
+              <label for="bulk-class-id">Default Class</label>
+              <select class="select" id="bulk-class-id" name="class_id">
+                <option value="">Unassigned</option>
+              </select>
+            </div>
             <div class="field">
               <label for="bulk-input">Bulk Data</label>
               <textarea class="textarea" id="bulk-input" placeholder="101,Alice Johnson&#10;102,Bob Smith" required></textarea>
@@ -77,25 +97,43 @@
         </article>
       </section>
 
-      <section class="card" style="margin-top: 20px;">
-        <h3>Student List</h3>
-        <p class="section-copy">All saved students ordered by roll number.</p>
+      <section class="card">
+        <div class="toolbar">
+          <div>
+            <h3>Student Directory</h3>
+            <p class="section-copy">Use search and class filters for faster navigation in larger rosters.</p>
+          </div>
+          <div class="toolbar-actions">
+            <div class="field compact-field">
+              <label for="student-search">Search</label>
+              <input class="input" id="student-search" type="text" placeholder="Name or roll number">
+            </div>
+            <div class="field compact-field">
+              <label for="student-filter-class">Class</label>
+              <select class="select" id="student-filter-class">
+                <option value="">All classes</option>
+              </select>
+            </div>
+          </div>
+        </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th>#</th>
-                <th>Roll Number</th>
+                <th>Roll</th>
                 <th>Name</th>
+                <th>Class</th>
+                <th data-admin-only>Assign Class</th>
               </tr>
             </thead>
             <tbody id="students-table-body"></tbody>
           </table>
         </div>
+        <div class="pagination" id="students-pagination"></div>
       </section>
     </main>
-
-    <div class="toast-stack" id="toast-root"></div>
   </div>
+
+  <div class="toast-stack" id="toast-root"></div>
 </body>
 </html>

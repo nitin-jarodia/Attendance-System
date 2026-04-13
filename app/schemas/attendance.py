@@ -44,6 +44,8 @@ class AttendanceRecordRead(BaseModel):
     name: str
     status: AttendanceStatus
     date: date
+    class_id: int | None = None
+    class_name: str | None = None
 
 
 class AttendanceMarkResponse(BaseModel):
@@ -57,3 +59,10 @@ class AttendanceDeleteResponse(BaseModel):
     message: str
     roll_number: int
     date: date
+
+
+class AttendanceSearchResponse(BaseModel):
+    items: list[AttendanceRecordRead]
+    total: int
+    page: int
+    page_size: int

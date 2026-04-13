@@ -1,119 +1,129 @@
 # Attendance Management System
 
-A production-style Tier 1 Attendance Management System built with FastAPI, MySQL, and a clean vanilla HTML/CSS/JavaScript frontend.
+A Tier 2 Attendance Management System built with FastAPI, MySQL, SQLAlchemy, and a vanilla HTML/CSS/JavaScript frontend.
+
+## Tier 2 Highlights
+
+- Class and section management with student-to-class assignment.
+- JWT login with role-based access for `admin` and `teacher`.
+- Dashboard analytics for total students, total classes, today's attendance, and recent activity.
+- Student and attendance search/filter flows with pagination.
+- Student-wise attendance analytics and low-attendance detection.
+- Class-wise attendance analytics.
+- Backward-compatible Tier 1 student and attendance APIs extended with optional filters.
 
 ## Project Structure
 
 ```text
 attendance system/
 ├── app/
+│   ├── auth/
 │   ├── core/
-│   │   └── config.py
 │   ├── db/
-│   │   └── database.py
 │   ├── models/
-│   │   ├── attendance.py
-│   │   └── student.py
 │   ├── routes/
-│   │   ├── attendance_routes.py
-│   │   └── student_routes.py
 │   ├── schemas/
-│   │   ├── attendance.py
-│   │   └── student.py
 │   ├── services/
-│   │   ├── attendance_service.py
-│   │   └── student_service.py
 │   └── main.py
 ├── frontend/
 │   ├── assets/
 │   │   ├── css/
-│   │   │   └── styles.css
 │   │   └── js/
-│   │       ├── api.js
-│   │       ├── attendance.js
-│   │       ├── common.js
-│   │       ├── records.js
-│   │       └── students.js
 │   ├── attendance.html
-│   ├── index.html
+│   ├── classes.html
+│   ├── dashboard.html
+│   ├── login.html
 │   ├── records.html
 │   └── students.html
 ├── sql/
-│   └── schema.sql
+│   ├── schema.sql
+│   └── tier2_upgrade.sql
 ├── .env.example
-├── .gitignore
 ├── README.md
 └── requirements.txt
 ```
 
-## Features
+## Core Features
 
-- Student management with single add and bulk upload.
-- Bulk parsing with trim support, duplicate protection, and invalid-line skipping.
-- Attendance marking for `present`, `absent`, and `late`.
-- One attendance record per student per date using update-on-conflict logic at the API layer and a unique constraint at the database layer.
-- Date-based attendance records table with inline edit and safe delete.
-- CSV export in `roll,name,status,date` format.
-- Responsive frontend with instant success and error feedback.
+### 1. Class Management
 
-## API Endpoints
+- Create, update, and delete classes.
+- Assign students to classes.
+- Restrict teachers to their assigned class.
+
+### 2. Authentication and Roles
+
+- `POST /auth/login` for JWT authentication.
+- `admin` can manage classes, users, and students.
+- `teacher` can view only their assigned class and work with attendance for that class.
+- A default admin user is bootstrapped automatically when the system starts with an empty `users` table.
+
+### 3. Dashboard and Analytics
+
+- `GET /dashboard/summary`
+- `GET /analytics/students`
+- `GET /analytics/classes`
+
+### 4. Search, Filters, and Pagination
+
+- `GET /students/search`
+- `GET /attendance/search`
+- Students can be searched by name or roll number.
+- Attendance can be filtered by date, class, status, and search term.
+
+## Main API Endpoints
+
+### Auth
+
+- `POST /auth/login`
+- `GET /auth/me`
+- `GET /auth/users`
+- `POST /auth/users`
+
+### Classes
+
+- `GET /classes`
+- `POST /classes`
+- `PUT /classes/{class_id}`
+- `DELETE /classes/{class_id}`
+
+### Students
 
 - `POST /students/add`
 - `POST /students/bulk`
 - `GET /students`
+- `GET /students/search`
+- `PATCH /students/{roll_number}/class`
+
+### Attendance
+
 - `POST /attendance/mark`
-- `GET /attendance?date=YYYY-MM-DD`
+- `GET /attendance`
+- `GET /attendance/search`
 - `PUT /attendance/update`
 - `DELETE /attendance/delete`
-- `GET /attendance/export?date=YYYY-MM-DD`
+- `GET /attendance/export`
 
-## Step-by-Step Run Guide
+## Database Schema
 
-### 1. Open the project folder
+Tier 2 introduces:
 
-Run:
+- `classes`
+- `users`
+- `students.class_id`
+- `attendance.created_at`
+- `attendance.updated_at`
 
-```powershell
-cd "C:\attendance system"
-```
+Use:
 
-### 2. Start the MySQL service
+- `sql/schema.sql` for a fresh setup
+- `sql/tier2_upgrade.sql` to upgrade an existing Tier 1 schema manually
 
-On this machine the MySQL Windows service is `MySQL80`. Start it using an Administrator PowerShell:
+The application also runs a safe startup schema upgrade helper for common Tier 2 changes.
 
-```powershell
-Start-Service MySQL80
-```
+## Environment Variables
 
-To check that it is running:
-
-```powershell
-Get-Service MySQL80
-```
-
-If it shows `Running`, continue to the next step.
-
-### 3. Create the MySQL database and tables
-
-Open MySQL and run:
-
-```sql
-CREATE DATABASE IF NOT EXISTS attendance_management;
-USE attendance_management;
-SOURCE sql/schema.sql;
-```
-
-If `SOURCE sql/schema.sql;` does not work in your MySQL client, open `sql/schema.sql` and run its SQL statements manually.
-
-### 4. Create the environment file
-
-Run:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Then edit `.env` and set your real MySQL values, for example:
+Copy `.env.example` to `.env` and configure:
 
 ```env
 MYSQL_USER=root
@@ -121,80 +131,75 @@ MYSQL_PASSWORD=your_password
 MYSQL_HOST=127.0.0.1
 MYSQL_PORT=3306
 MYSQL_DB=attendance_management
+JWT_SECRET_KEY=change-me-in-production
+JWT_ALGORITHM=HS256
+JWT_EXPIRE_MINUTES=720
+BOOTSTRAP_ADMIN_USERNAME=admin
+BOOTSTRAP_ADMIN_PASSWORD=admin12345
 ```
 
-### 5. Create a Python virtual environment
+## Run Instructions
 
-Run:
-
-```powershell
-python -m venv .venv
-```
-
-### 6. Activate the virtual environment
-
-Run:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-If PowerShell blocks script execution, run this once in the same terminal and then activate again:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-```
-
-### 7. Install project dependencies
-
-Run:
-
-```powershell
-pip install -r requirements.txt
-```
-
-### 8. Start the FastAPI server
-
-Run:
-
-```powershell
-uvicorn app.main:app --reload
-```
-
-### 9. Open the application
-
-Use these URLs in your browser:
-
-- Main app: [http://127.0.0.1:8000](http://127.0.0.1:8000)
-- API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-
-## Quick Commands Summary
-
-Run these in order from PowerShell:
-
-```powershell
-cd "C:\attendance system"
-Copy-Item .env.example .env
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-Run this first in an Administrator PowerShell if MySQL is not running:
+### 1. Start MySQL
 
 ```powershell
 Start-Service MySQL80
 ```
 
-## Frontend Run
+### 2. Create the database
 
-The frontend is served directly by FastAPI from the `frontend/` folder, so no separate frontend server is needed.
+```sql
+CREATE DATABASE IF NOT EXISTS attendance_management;
+```
+
+### 3. Apply schema
+
+For a new database:
+
+```sql
+SOURCE sql/schema.sql;
+```
+
+For an existing Tier 1 database:
+
+```sql
+SOURCE sql/tier2_upgrade.sql;
+```
+
+### 4. Create and activate the virtual environment
+
+```powershell
+cd "C:\attendance system"
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+### 5. Install dependencies
+
+```powershell
+pip install -r requirements.txt
+```
+
+### 6. Start the app
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+If `8000` is already in use on your machine, choose another port:
+
+```powershell
+uvicorn app.main:app --reload --port 8001
+```
+
+### 7. Open the app
+
+- App: [http://127.0.0.1:8000](http://127.0.0.1:8000)
+- Docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- Login: [http://127.0.0.1:8000/login.html](http://127.0.0.1:8000/login.html)
 
 ## Notes
 
-- The backend creates SQLAlchemy-managed tables on startup as a convenience, but `sql/schema.sql` is the explicit MySQL schema reference requested for the project.
-- If startup fails with `Can't connect to MySQL server on '127.0.0.1'`, the MySQL service is usually stopped or the `.env` credentials are incorrect.
-- Attendance uniqueness is enforced twice:
-  - At the API/service layer by updating existing records for the same `roll_number` and `date`
-  - At the database layer by the unique constraint on `(roll_number, date)`
+- Existing Tier 1 endpoints are preserved and extended with optional filters rather than being replaced.
+- Attendance uniqueness is still enforced by both service logic and the unique database constraint on `(roll_number, date)`.
+- The database URL is now built safely, so MySQL passwords containing special characters work correctly.

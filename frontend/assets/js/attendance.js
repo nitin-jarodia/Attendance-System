@@ -1,4 +1,6 @@
 const attendanceDateInput = document.getElementById("attendance-date");
+const attendanceClassSelect = document.getElementById("attendance-class");
+const attendanceSearchInput = document.getElementById("attendance-search");
 const attendanceContainer = document.getElementById("attendance-container");
 const saveAttendanceButton = document.getElementById("save-attendance-button");
 const totalCountEl = document.getElementById("attendance-total");
@@ -7,6 +9,24 @@ const absentCountEl = document.getElementById("attendance-absent");
 const lateCountEl = document.getElementById("attendance-late");
 
 let attendanceState = [];
+let currentUser = null;
+let searchTimer = null;
+
+function renderClassOptions(classes) {
+  if (!attendanceClassSelect) {
+    return;
+  }
+  attendanceClassSelect.innerHTML = `
+    <option value="">All classes</option>
+    ${classes
+      .map((classroom) => `<option value="${classroom.id}">${window.appUi.escapeHtml(classroom.name)}</option>`)
+      .join("")}
+  `;
+  if (currentUser?.role === "teacher" && currentUser?.assigned_class_id) {
+    attendanceClassSelect.value = String(currentUser.assigned_class_id);
+    attendanceClassSelect.disabled = true;
+  }
+}
 
 function updateSummary() {
   const counts = attendanceState.reduce(
@@ -84,9 +104,12 @@ function renderAttendanceRows() {
 
 async function loadAttendancePage() {
   const selectedDate = attendanceDateInput.value;
+  window.appUi.setLoading(attendanceContainer, "Loading class roster...");
+  const classId = attendanceClassSelect.value || undefined;
+  const search = attendanceSearchInput.value.trim() || undefined;
   const [students, existingAttendance] = await Promise.all([
-    window.apiClient.getStudents(),
-    window.apiClient.getAttendance(selectedDate),
+    window.apiClient.getStudents({ class_id: classId, search }),
+    window.apiClient.getAttendance({ date: selectedDate, class_id: classId, search }),
   ]);
 
   const attendanceMap = new Map(existingAttendance.map((record) => [record.roll_number, record.status]));
@@ -104,6 +127,21 @@ attendanceDateInput.addEventListener("change", async () => {
   } catch (error) {
     window.appUi.showToast(error.message, "error");
   }
+});
+
+attendanceClassSelect.addEventListener("change", async () => {
+  try {
+    await loadAttendancePage();
+  } catch (error) {
+    window.appUi.showToast(error.message, "error");
+  }
+});
+
+attendanceSearchInput.addEventListener("input", () => {
+  window.clearTimeout(searchTimer);
+  searchTimer = window.setTimeout(() => {
+    loadAttendancePage().catch((error) => window.appUi.showToast(error.message, "error"));
+  }, 250);
 });
 
 saveAttendanceButton.addEventListener("click", async () => {
@@ -126,8 +164,12 @@ saveAttendanceButton.addEventListener("click", async () => {
 });
 
 document.addEventListener("DOMContentLoaded", async () => {
-  attendanceDateInput.value = window.appUi.getTodayDate();
   try {
+    const app = await window.appUi.initializeApp();
+    currentUser = app.user;
+    attendanceDateInput.value = window.appUi.getTodayDate();
+    const classes = await window.apiClient.getClasses();
+    renderClassOptions(classes);
     await loadAttendancePage();
   } catch (error) {
     window.appUi.showToast(error.message, "error");

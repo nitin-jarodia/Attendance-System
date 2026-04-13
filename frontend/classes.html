@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Classes | Attendance Management System</title>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <script src="/assets/js/api.js" defer></script>
+  <script src="/assets/js/common.js" defer></script>
+  <script src="/assets/js/classes.js" defer></script>
+</head>
+<body>
+  <div class="shell-layout">
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-brand">
+          <h1>Attendance Pro</h1>
+          <p>Tier 2 management suite</p>
+        </div>
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="dashboard.html" data-nav>Dashboard</a>
+          <a class="nav-link" href="students.html" data-nav>Students</a>
+          <a class="nav-link" href="attendance.html" data-nav>Attendance</a>
+          <a class="nav-link" href="records.html" data-nav>Records</a>
+          <a class="nav-link" href="classes.html" data-nav>Classes</a>
+        </nav>
+      </div>
+      <div class="sidebar-user">
+        <strong data-user-name>Loading...</strong>
+        <span data-user-role></span>
+        <button class="btn btn-secondary" type="button" data-logout>Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Classes & access</p>
+          <h2>Classes</h2>
+          <p>Create sections, review class sizes, and manage admin or teacher access from one page.</p>
+        </div>
+      </header>
+
+      <section class="grid two">
+        <article class="card" data-admin-only>
+          <h3>Create Class</h3>
+          <form id="create-class-form">
+            <div class="field">
+              <label for="class-name">Class Name</label>
+              <input class="input" id="class-name" name="name" type="text" placeholder="CSE-A" required>
+            </div>
+            <div class="actions">
+              <button class="btn btn-primary" type="submit">Create Class</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="card" data-admin-only>
+          <h3>Create User</h3>
+          <form id="create-user-form">
+            <div class="form-grid">
+              <div class="field">
+                <label for="new-username">Username</label>
+                <input class="input" id="new-username" name="username" type="text" required>
+              </div>
+              <div class="field">
+                <label for="new-password">Password</label>
+                <input class="input" id="new-password" name="password" type="password" minlength="8" required>
+              </div>
+              <div class="field">
+                <label for="new-role">Role</label>
+                <select class="select" id="new-role" name="role">
+                  <option value="teacher">Teacher</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="new-assigned-class">Assigned Class</label>
+                <select class="select" id="new-assigned-class" name="assigned_class_id">
+                  <option value="">None</option>
+                </select>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="btn btn-primary" type="submit">Create User</button>
+            </div>
+          </form>
+        </article>
+      </section>
+
+      <section class="card">
+        <h3>Classes</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Students</th>
+                <th data-admin-only>Edit</th>
+                <th data-admin-only>Delete</th>
+              </tr>
+            </thead>
+            <tbody id="classes-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" data-admin-only>
+        <h3>Users</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Assigned Class</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toast-root"></div>
+</body>
+</html>
