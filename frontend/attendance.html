@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mark Attendance | Attendance Management System</title>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <script src="/assets/js/api.js" defer></script>
+  <script src="/assets/js/common.js" defer></script>
+  <script src="/assets/js/attendance.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <h1>Attendance Management System</h1>
+          <p>Mark and update attendance for each student by date.</p>
+        </div>
+        <nav class="nav-links">
+          <a class="nav-link" href="students.html" data-nav>Students</a>
+          <a class="nav-link" href="attendance.html" data-nav>Mark Attendance</a>
+          <a class="nav-link" href="records.html" data-nav>Records</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <section class="hero">
+        <div>
+          <h2>Mark Attendance</h2>
+          <p>Select a date, review the full roster, and save statuses in a single operation. Existing records are updated instead of duplicated.</p>
+        </div>
+        <div class="hero-actions">
+          <div class="field">
+            <label for="attendance-date">Attendance Date</label>
+            <input class="input" id="attendance-date" type="date">
+          </div>
+          <button class="btn btn-primary" id="save-attendance-button" type="button">Save Attendance</button>
+        </div>
+      </section>
+
+      <section class="stats-row">
+        <article class="stat-card">
+          <span>Total students</span>
+          <strong id="attendance-total">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Present</span>
+          <strong id="attendance-present">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Absent</span>
+          <strong id="attendance-absent">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Late</span>
+          <strong id="attendance-late">0</strong>
+        </article>
+      </section>
+
+      <section class="card">
+        <h3>Roster</h3>
+        <p class="section-copy">Students default to <strong>absent</strong> until you change their status for the selected day.</p>
+        <div id="attendance-container" class="attendance-list"></div>
+      </section>
+    </main>
+
+    <div class="toast-stack" id="toast-root"></div>
+  </div>
+</body>
+</html>

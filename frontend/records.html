@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance Records | Attendance Management System</title>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <script src="/assets/js/api.js" defer></script>
+  <script src="/assets/js/common.js" defer></script>
+  <script src="/assets/js/records.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <h1>Attendance Management System</h1>
+          <p>Review, correct, delete, and export saved attendance records.</p>
+        </div>
+        <nav class="nav-links">
+          <a class="nav-link" href="students.html" data-nav>Students</a>
+          <a class="nav-link" href="attendance.html" data-nav>Mark Attendance</a>
+          <a class="nav-link" href="records.html" data-nav>Records</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <section class="hero">
+        <div>
+          <h2>Attendance Records</h2>
+          <p>Filter records by date, edit statuses inline, remove incorrect entries, and export the selected day to CSV.</p>
+        </div>
+      </section>
+
+      <section class="toolbar card">
+        <div class="field">
+          <label for="records-date">Select Date</label>
+          <input class="input" id="records-date" type="date">
+        </div>
+        <div class="hero-actions">
+          <div class="muted">Total records: <strong id="records-total">0</strong></div>
+          <button class="btn btn-export" id="export-button" type="button">Export CSV</button>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top: 20px;">
+        <h3>Saved Records</h3>
+        <p class="section-copy">Each row can be corrected without creating a duplicate record for the same student and date.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Roll</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Edit</th>
+                <th>Delete</th>
+              </tr>
+            </thead>
+            <tbody id="records-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast-stack" id="toast-root"></div>
+  </div>
+</body>
+</html>
