@@ -26,6 +26,7 @@ async function renderRecentActivity() {
     const items = await window.apiClient.getRecentActivity(5);
     if (!items.length) {
       recentActivityEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📝</div>No activity yet. Actions will appear here as they happen.</div>`;
+      window.appUi.animateContentIn(recentActivityEl);
       return;
     }
     recentActivityEl.innerHTML = items.map((entry) => {
@@ -40,8 +41,10 @@ async function renderRecentActivity() {
           </div>
         </div>`;
     }).join("");
+    window.appUi.animateContentIn(recentActivityEl);
   } catch {
     recentActivityEl.innerHTML = `<div class="empty-state">Could not load recent activity.</div>`;
+    window.appUi.animateContentIn(recentActivityEl);
   }
 }
 
@@ -51,6 +54,7 @@ async function renderUpcomingHolidays() {
     const holidays = await window.apiClient.getUpcomingHolidays(3);
     if (!holidays.length) {
       upcomingHolidaysEl.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎉</div>No upcoming holidays this month!</div>`;
+      window.appUi.animateContentIn(upcomingHolidaysEl);
       return;
     }
     upcomingHolidaysEl.innerHTML = holidays.map((h) => `
@@ -59,8 +63,10 @@ async function renderUpcomingHolidays() {
         <span class="muted">${h.date} (in ${h.days_until} day${h.days_until === 1 ? "" : "s"})</span>
       </div>
     `).join("");
+    window.appUi.animateContentIn(upcomingHolidaysEl);
   } catch {
     upcomingHolidaysEl.innerHTML = `<div class="empty-state">Could not load holidays.</div>`;
+    window.appUi.animateContentIn(upcomingHolidaysEl);
   }
 }
 
@@ -68,6 +74,7 @@ function renderLowAttendance(response) {
   const lowStudents = response.items.filter((item) => item.is_low_attendance);
   if (!lowStudents.length) {
     lowAttendanceBody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-state-icon">🎉</div>No students below the threshold.</div></td></tr>`;
+    window.appUi.animateContentIn(lowAttendanceBody);
     return;
   }
   lowAttendanceBody.innerHTML = lowStudents.map((item) => `
@@ -78,11 +85,13 @@ function renderLowAttendance(response) {
       <td>${item.attendance_percentage}%</td>
     </tr>
   `).join("");
+  window.appUi.animateContentIn(lowAttendanceBody);
 }
 
 function renderClassAnalytics(response) {
   if (!response.items.length) {
     classAnalyticsBody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No class analytics available.</div></td></tr>`;
+    window.appUi.animateContentIn(classAnalyticsBody);
     return;
   }
   classAnalyticsBody.innerHTML = response.items.map((item) => `
@@ -95,6 +104,7 @@ function renderClassAnalytics(response) {
       <td>${item.attendance_percentage}%</td>
     </tr>
   `).join("");
+  window.appUi.animateContentIn(classAnalyticsBody);
 }
 
 function renderWeeklyChart(classAnalytics) {

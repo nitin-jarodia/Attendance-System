@@ -12,6 +12,7 @@ const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth() + 1;
 let currentUser = null;
+let calendarDirection = "left";
 
 function openAddHolidayDialog(dateStr) {
   window.appUi.showDialog({
@@ -107,6 +108,10 @@ function renderCalendar(data) {
   }
 
   calendarGrid.innerHTML = html;
+  calendarGrid.classList.remove("slide-left", "slide-right");
+  void calendarGrid.offsetWidth;
+  calendarGrid.classList.add(calendarDirection === "right" ? "slide-right" : "slide-left");
+  window.appUi.animateContentIn(calendarGrid);
 
   calendarGrid.querySelectorAll(".calendar-cell:not(.empty)").forEach((cell) => {
     cell.addEventListener("click", () => {
@@ -127,6 +132,7 @@ async function loadUpcomingHolidays() {
     const holidays = await window.apiClient.getUpcomingHolidays(3);
     if (!holidays.length) {
       upcomingList.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🎉</div>No holidays this month!</div>`;
+      window.appUi.animateContentIn(upcomingList);
       return;
     }
     upcomingList.innerHTML = holidays.map((h) => `
@@ -138,8 +144,10 @@ async function loadUpcomingHolidays() {
         <span class="muted">${h.date} (in ${h.days_until} day${h.days_until === 1 ? "" : "s"})</span>
       </div>
     `).join("");
+    window.appUi.animateContentIn(upcomingList);
   } catch {
     upcomingList.innerHTML = `<div class="empty-state">Could not load upcoming holidays.</div>`;
+    window.appUi.animateContentIn(upcomingList);
   }
 }
 
@@ -158,8 +166,10 @@ async function loadWorkingDays() {
         <div class="metric-card"><strong>${info.total_weekends}</strong><span>Weekends</span></div>
       </div>
     `;
+    window.appUi.animateContentIn(workingDaysSummary);
   } catch {
     workingDaysSummary.innerHTML = `<div class="empty-state">Could not load working days info.</div>`;
+    window.appUi.animateContentIn(workingDaysSummary);
   }
 }
 
@@ -171,16 +181,19 @@ async function loadCalendar() {
     loadUpcomingHolidays();
   } catch (err) {
     calendarGrid.innerHTML = `<div class="empty-state">Failed to load calendar: ${window.appUi.escapeHtml(err.message)}</div>`;
+    window.appUi.animateContentIn(calendarGrid);
   }
 }
 
 prevMonthBtn?.addEventListener("click", () => {
+  calendarDirection = "right";
   currentMonth--;
   if (currentMonth < 1) { currentMonth = 12; currentYear--; }
   loadCalendar();
 });
 
 nextMonthBtn?.addEventListener("click", () => {
+  calendarDirection = "left";
   currentMonth++;
   if (currentMonth > 12) { currentMonth = 1; currentYear++; }
   loadCalendar();

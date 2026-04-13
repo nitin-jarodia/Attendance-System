@@ -3,8 +3,10 @@ const loginForm = document.getElementById("login-form");
 loginForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(loginForm);
+  const submitButton = loginForm.querySelector('button[type="submit"]');
 
   try {
+    window.appUi.setButtonLoading(submitButton, true);
     const response = await window.apiClient.login({
       username: String(formData.get("username") || ""),
       password: String(formData.get("password") || ""),
@@ -14,6 +16,8 @@ loginForm?.addEventListener("submit", async (event) => {
     window.location.href = `/${next}`;
   } catch (error) {
     window.appUi.showToast(error.message, "error");
+  } finally {
+    window.appUi.setButtonLoading(submitButton, false);
   }
 });
 
@@ -28,6 +32,7 @@ document.querySelectorAll("[data-demo-login]").forEach((btn) => {
     const creds = credentials[role] || credentials.admin;
 
     try {
+      window.appUi.setButtonLoading(btn, true);
       const response = await window.apiClient.login(creds);
       window.appUi.setAuthState(response.access_token, response.user);
 
@@ -39,6 +44,8 @@ document.querySelectorAll("[data-demo-login]").forEach((btn) => {
       window.location.href = "/dashboard.html";
     } catch (error) {
       window.appUi.showToast(`Demo login failed: ${error.message}. Make sure the default admin account exists.`, "error");
+    } finally {
+      window.appUi.setButtonLoading(btn, false);
     }
   });
 });

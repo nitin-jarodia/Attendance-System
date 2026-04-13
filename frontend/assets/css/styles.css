@@ -18,6 +18,19 @@
   --sidebar-collapsed-width: 72px;
   --shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
   --radius: 18px;
+  --focus-ring: rgba(37, 99, 235, 0.18);
+  --overlay: rgba(15, 23, 42, 0.48);
+  --motion-hover: 140ms;
+  --motion-press: 100ms;
+  --motion-enter: 220ms;
+  --motion-overlay: 250ms;
+  --motion-overlay-close: 150ms;
+  --motion-toast: 320ms;
+  --motion-stagger-step: 60ms;
+  --motion-stagger-cap: 300ms;
+  --motion-ease-standard: ease;
+  --motion-ease-enter: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 :root.dark-mode {
@@ -42,6 +55,31 @@ body {
   background: linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
   color: var(--text);
   transition: background 0.2s ease, color 0.2s ease;
+  overflow-x: hidden;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--focus-ring);
+  border-radius: inherit;
+}
+
+.page-transition-root {
+  opacity: 0;
+  transform: translateY(8px);
+  will-change: transform, opacity;
+}
+
+.page-transition-root.page-transition-ready {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity var(--motion-enter) var(--motion-ease-enter),
+    transform var(--motion-enter) var(--motion-ease-enter);
+}
+
+.content-loaded {
+  animation: contentReveal 0.3s ease-out;
 }
 
 a {
@@ -64,7 +102,6 @@ select {
   min-height: 100vh;
   display: grid;
   grid-template-columns: var(--sidebar-collapsed-width) minmax(0, 1fr);
-  transition: grid-template-columns 0.3s ease;
   position: relative;
 }
 
@@ -85,7 +122,8 @@ select {
   position: sticky;
   top: 0;
   height: 100vh;
-  transition: width 0.3s ease, padding 0.3s ease, transform 0.3s ease;
+  will-change: transform;
+  transition: transform 0.3s var(--motion-ease-enter);
 }
 
 .sidebar-brand h1 {
@@ -117,7 +155,9 @@ select {
   white-space: nowrap;
   opacity: 0;
   transform: translateX(-6px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity var(--motion-enter) var(--motion-ease-enter),
+    transform var(--motion-enter) var(--motion-ease-enter);
 }
 
 .sidebar-expanded .nav-label,
@@ -135,25 +175,41 @@ select {
   align-items: center;
   gap: 12px;
   position: relative;
-  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+  overflow: hidden;
+  transition:
+    transform var(--motion-hover) var(--motion-ease-standard),
+    background-color var(--motion-hover) var(--motion-ease-standard),
+    color var(--motion-hover) var(--motion-ease-standard),
+    box-shadow var(--motion-hover) var(--motion-ease-standard);
 }
 
 .nav-link.active,
 .nav-link:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
-  transform: scale(1.02);
+  transform: translateX(4px);
+}
+
+.nav-link::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 68%;
+  border-radius: 0 999px 999px 0;
+  background: #93c5fd;
+  opacity: 0;
+  transform: translateY(-50%) scaleY(0.25);
+  transform-origin: center;
+  transition:
+    opacity var(--motion-hover) var(--motion-ease-standard),
+    transform var(--motion-hover) var(--motion-ease-standard);
 }
 
 .nav-link.active::before {
-  content: "";
-  position: absolute;
-  left: -8px;
-  top: 10px;
-  bottom: 10px;
-  width: 4px;
-  border-radius: 999px;
-  background: #93c5fd;
+  opacity: 1;
+  transform: translateY(-50%) scaleY(1);
 }
 
 .sidebar-user {
@@ -170,7 +226,9 @@ select {
   opacity: 0;
   transform: translateX(-8px);
   pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity var(--motion-enter) var(--motion-ease-enter),
+    transform var(--motion-enter) var(--motion-ease-enter);
 }
 
 .sidebar-expanded .sidebar-brand p,
@@ -206,13 +264,23 @@ select {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition:
+    transform var(--motion-hover) var(--motion-ease-standard),
+    background-color var(--motion-hover) var(--motion-ease-standard),
+    box-shadow var(--motion-hover) var(--motion-ease-standard),
+    opacity var(--motion-hover) var(--motion-ease-standard);
 }
 
 .mobile-menu-button:hover,
 .pin-sidebar-button:hover,
 .icon-button:hover {
-  transform: scale(1.04);
+  transform: translateY(-1px);
+}
+
+.mobile-menu-button:active,
+.pin-sidebar-button:active,
+.icon-button:active {
+  transform: scale(0.96);
 }
 
 .pin-sidebar-button {
@@ -236,10 +304,11 @@ select {
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
   border: 0;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.3s ease;
   z-index: 50;
 }
 
@@ -253,7 +322,6 @@ select {
   display: grid;
   gap: 20px;
   min-width: 0;
-  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .page-header {
@@ -298,12 +366,24 @@ select {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  transition:
+    transform 0.2s var(--motion-ease-standard),
+    box-shadow 0.2s var(--motion-ease-standard),
+    background-color 0.2s var(--motion-ease-standard),
+    opacity var(--motion-enter) var(--motion-ease-enter);
+  will-change: transform;
 }
 
 .card:hover,
 .stat-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.12);
+}
+
+.card:active,
+.stat-card:active {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.1);
 }
 
 .card {
@@ -393,7 +473,10 @@ select {
   color: var(--text);
   padding: 12px 14px;
   outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform var(--motion-hover) var(--motion-ease-standard);
 }
 
 .textarea {
@@ -406,6 +489,7 @@ select {
 .select:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  transform: translateY(-1px);
 }
 
 .table-input {
@@ -418,18 +502,80 @@ select {
   padding: 12px 18px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform var(--motion-hover) var(--motion-ease-standard),
+    opacity 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    filter var(--motion-hover) var(--motion-ease-standard);
+}
+
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 10%, transparent 70%);
+  transform: scale(0);
+  opacity: 0;
+  transition:
+    transform 0.4s ease,
+    opacity 0.4s ease;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
+  filter: brightness(1.03);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.btn:active::after {
+  transform: scale(2.5);
+  opacity: 1;
+}
+
+.btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
+}
+
+.btn-loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.btn-loading .btn-text {
+  opacity: 0;
+}
+
+.btn-loading::before {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  margin-top: -9px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: btnSpin 0.6s linear infinite;
 }
 
 .btn-primary {
@@ -494,6 +640,18 @@ tbody tr:hover {
   font-size: 0.85rem;
   font-weight: 700;
   text-transform: capitalize;
+  transition:
+    transform var(--motion-hover) var(--motion-ease-standard),
+    background-color 0.25s ease,
+    color 0.25s ease,
+    opacity var(--motion-enter) var(--motion-ease-enter);
+  animation: badgePop 0.3s var(--motion-ease-bounce);
+}
+
+.badge:hover,
+.pill:hover,
+.role-badge:hover {
+  transform: scale(1.05);
 }
 
 .badge.present {
@@ -525,10 +683,21 @@ tbody tr:hover {
   border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--surface-soft);
+  transition:
+    transform var(--motion-hover) var(--motion-ease-standard),
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+  --row-flash-color: rgba(37, 99, 235, 0.14);
 }
 
 .attendance-row.is-selected {
   outline: 2px solid rgba(37, 99, 235, 0.25);
+  transform: translateY(-1px);
+}
+
+.attendance-row:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
 .attendance-state-present {
@@ -723,7 +892,13 @@ tbody tr:hover {
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    transform var(--motion-press) var(--motion-ease-standard),
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    opacity var(--motion-hover) var(--motion-ease-standard);
   background: var(--surface-soft);
   color: var(--muted);
   min-width: 90px;
@@ -734,22 +909,45 @@ tbody tr:hover {
   transform: translateY(-1px);
 }
 
+.attendance-status-btn:active {
+  transform: scale(0.93);
+}
+
 .attendance-status-btn.active-present {
-  background: #f0fdf4;
+  background: rgba(22, 163, 74, 0.14);
   color: var(--success);
-  border-color: var(--success);
+  border-color: rgba(22, 163, 74, 0.4);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
 }
 
 .attendance-status-btn.active-late {
-  background: #fffbeb;
+  background: rgba(217, 119, 6, 0.14);
   color: var(--warning);
-  border-color: var(--warning);
+  border-color: rgba(217, 119, 6, 0.4);
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.18);
 }
 
 .attendance-status-btn.active-absent {
-  background: #fef2f2;
+  background: rgba(220, 38, 38, 0.14);
   color: var(--danger);
-  border-color: var(--danger);
+  border-color: rgba(220, 38, 38, 0.4);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18);
+}
+
+.row-status-changed {
+  animation: statusFlash 0.5s ease-out;
+}
+
+.status-flash-present {
+  --row-flash-color: rgba(22, 163, 74, 0.22);
+}
+
+.status-flash-late {
+  --row-flash-color: rgba(217, 119, 6, 0.22);
+}
+
+.status-flash-absent {
+  --row-flash-color: rgba(220, 38, 38, 0.22);
 }
 
 .grace-period-banner {
@@ -775,6 +973,7 @@ tbody tr:hover {
   font-size: 0.72rem;
   font-weight: 700;
   cursor: help;
+  animation: badgePop 0.3s var(--motion-ease-bounce);
 }
 
 .frequent-badge {
@@ -786,6 +985,7 @@ tbody tr:hover {
   color: var(--warning);
   font-size: 0.72rem;
   font-weight: 700;
+  animation: badgePop 0.3s var(--motion-ease-bounce);
 }
 
 .activity-feed {
@@ -801,11 +1001,15 @@ tbody tr:hover {
   border-radius: 14px;
   border: 1px solid var(--border);
   background: var(--surface-soft);
-  transition: transform 0.15s ease;
+  transition:
+    transform var(--motion-hover) var(--motion-ease-standard),
+    background-color var(--motion-hover) var(--motion-ease-standard),
+    box-shadow 0.2s ease;
 }
 
 .activity-entry:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
 }
 
 .activity-icon {
@@ -853,6 +1057,7 @@ tbody tr:hover {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
+  position: relative;
 }
 
 .calendar-header-cell {
@@ -873,7 +1078,11 @@ tbody tr:hover {
   border-radius: 12px;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    transform var(--motion-hover) var(--motion-ease-standard),
+    box-shadow var(--motion-hover) var(--motion-ease-standard),
+    background-color var(--motion-hover) var(--motion-ease-standard),
+    opacity var(--motion-hover) var(--motion-ease-standard);
   border: 2px solid transparent;
   position: relative;
   min-height: 56px;
@@ -882,8 +1091,8 @@ tbody tr:hover {
 }
 
 .calendar-cell:hover {
-  transform: scale(1.04);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transform: scale(1.08);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
 .calendar-cell.today {
@@ -898,6 +1107,20 @@ tbody tr:hover {
 .calendar-cell.holiday {
   background: rgba(220, 38, 38, 0.08);
   color: var(--danger);
+}
+
+.calendar-cell.holiday::after,
+.calendar-cell.exam_day::after,
+.calendar-cell.half_day::after {
+  content: "";
+  position: absolute;
+  bottom: 7px;
+  right: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: dotPulse 2s ease-in-out infinite;
 }
 
 .calendar-cell.weekend {
@@ -954,7 +1177,10 @@ tbody tr:hover {
   padding: 8px 16px;
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.15s ease;
+  transition:
+    transform var(--motion-hover) var(--motion-ease-standard),
+    background-color var(--motion-hover) var(--motion-ease-standard),
+    box-shadow var(--motion-hover) var(--motion-ease-standard);
 }
 
 .calendar-nav button:hover {
@@ -968,10 +1194,17 @@ tbody tr:hover {
   align-items: center;
   padding: 10px 0;
   border-bottom: 1px solid var(--border);
+  transition:
+    transform var(--motion-hover) var(--motion-ease-standard),
+    opacity var(--motion-enter) var(--motion-ease-enter);
 }
 
 .upcoming-holiday-item:last-child {
   border-bottom: 0;
+}
+
+.upcoming-holiday-item:hover {
+  transform: translateX(4px);
 }
 
 .stats-row.five-col {
@@ -1011,6 +1244,17 @@ tbody tr:hover {
   border-radius: 16px;
   background: var(--surface-soft);
   border: 1px solid var(--border);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.activity-card:hover,
+.metric-card:hover,
+.list-card:hover,
+.settings-panel:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.08);
 }
 
 .list {
@@ -1020,8 +1264,8 @@ tbody tr:hover {
 
 .toast-stack {
   position: fixed;
+  top: 20px;
   right: 18px;
-  bottom: 18px;
   display: grid;
   gap: 10px;
   z-index: 50;
@@ -1036,6 +1280,41 @@ tbody tr:hover {
   border-left: 5px solid var(--primary);
   border-radius: 14px;
   padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(120%);
+  transition:
+    transform var(--motion-toast) var(--motion-ease-enter),
+    opacity var(--motion-toast) ease;
+}
+
+.toast.show {
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.toast.hide {
+  transform: translateX(120%);
+  opacity: 0;
+  transition:
+    transform 0.25s ease-in,
+    opacity 0.25s ease-in;
+}
+
+.toast-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.35);
+  transform-origin: left center;
+  animation: toastCountdown var(--toast-duration, 4000ms) linear forwards;
+}
+
+.toast.paused .toast-progress {
+  animation-play-state: paused;
 }
 
 .toast-content {
@@ -1051,6 +1330,13 @@ tbody tr:hover {
   color: var(--primary);
   font-weight: 700;
   cursor: pointer;
+  transition:
+    transform var(--motion-hover) var(--motion-ease-standard),
+    opacity var(--motion-hover) var(--motion-ease-standard);
+}
+
+.toast-action:hover {
+  transform: translateY(-1px);
 }
 
 .dialog-open {
@@ -1062,9 +1348,23 @@ tbody tr:hover {
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(15, 23, 42, 0.48);
+  background: var(--overlay);
+  backdrop-filter: blur(4px);
   padding: 24px;
   z-index: 70;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-overlay) ease;
+}
+
+.dialog-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dialog-backdrop.closing {
+  opacity: 0;
+  transition-duration: var(--motion-overlay-close);
 }
 
 .dialog-card {
@@ -1074,6 +1374,22 @@ tbody tr:hover {
   border-radius: 24px;
   box-shadow: var(--shadow);
   padding: 24px;
+  opacity: 0;
+  transform: scale(0.95) translateY(10px);
+  transition:
+    opacity var(--motion-overlay) var(--motion-ease-enter),
+    transform var(--motion-overlay) var(--motion-ease-enter);
+}
+
+.dialog-backdrop.open .dialog-card {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+.dialog-backdrop.closing .dialog-card {
+  opacity: 0;
+  transform: scale(0.97) translateY(5px);
+  transition-duration: var(--motion-overlay-close);
 }
 
 .dialog-header,
@@ -1176,7 +1492,9 @@ tbody tr:hover {
   inset: 0;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.15);
-  transition: all 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .switch-slider::before {
@@ -1215,6 +1533,19 @@ tbody tr:hover {
   color: #fff;
   box-shadow: var(--shadow);
   cursor: pointer;
+  transition:
+    transform var(--motion-hover) var(--motion-ease-standard),
+    box-shadow 0.2s ease,
+    filter var(--motion-hover) var(--motion-ease-standard);
+}
+
+.voice-fab:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.03);
+}
+
+.voice-fab:active {
+  transform: scale(0.97);
 }
 
 .voice-fab-core,
@@ -1235,6 +1566,7 @@ tbody tr:hover {
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow);
+  animation: pageFadeIn 0.24s var(--motion-ease-enter);
 }
 
 .voice-panel-header {
@@ -1295,6 +1627,14 @@ tbody tr:hover {
   border-left-color: var(--danger);
 }
 
+.toast.info {
+  border-left-color: var(--primary);
+}
+
+.toast.warning {
+  border-left-color: var(--warning);
+}
+
 .toast p {
   margin: 0;
 }
@@ -1313,6 +1653,14 @@ tbody tr:hover {
   border-radius: 24px;
   box-shadow: var(--shadow);
   padding: 28px;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.login-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.12);
 }
 
 .login-card h1 {
@@ -1344,6 +1692,10 @@ tbody tr:hover {
   border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--surface-soft);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity var(--motion-enter) var(--motion-ease-enter);
 }
 
 .metric-card span,
@@ -1374,6 +1726,271 @@ tbody tr:hover {
   font-weight: 700;
   font-size: 0.82rem;
   text-transform: capitalize;
+  transition:
+    transform var(--motion-hover) var(--motion-ease-standard),
+    background-color 0.25s ease,
+    color 0.25s ease;
+  animation: badgePop 0.3s var(--motion-ease-bounce);
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #fff;
+  animation: badgePop 0.3s var(--motion-ease-bounce);
+}
+
+.role-badge.role-teacher {
+  background: var(--primary);
+}
+
+.role-badge.role-admin {
+  background: var(--warning);
+}
+
+.role-badge.role-principal {
+  background: #ca8a04;
+}
+
+.counter-number.updated {
+  animation: counterBump 0.3s ease;
+}
+
+.stats-row > *,
+.metric-grid > *,
+.stack-list > *,
+.activity-feed > *,
+.attendance-list > *,
+.table-wrap tbody > tr,
+.upcoming-holiday-item,
+.dialog-body > *,
+.dialog-actions > * {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: cardFadeIn 0.35s ease-out forwards;
+}
+
+.stats-row > *:nth-child(1),
+.metric-grid > *:nth-child(1),
+.stack-list > *:nth-child(1),
+.activity-feed > *:nth-child(1),
+.attendance-list > *:nth-child(1),
+.table-wrap tbody > tr:nth-child(1),
+.upcoming-holiday-item:nth-child(1),
+.dialog-body > *:nth-child(1),
+.dialog-actions > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.stats-row > *:nth-child(2),
+.metric-grid > *:nth-child(2),
+.stack-list > *:nth-child(2),
+.activity-feed > *:nth-child(2),
+.attendance-list > *:nth-child(2),
+.table-wrap tbody > tr:nth-child(2),
+.upcoming-holiday-item:nth-child(2),
+.dialog-body > *:nth-child(2),
+.dialog-actions > *:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.stats-row > *:nth-child(3),
+.metric-grid > *:nth-child(3),
+.stack-list > *:nth-child(3),
+.activity-feed > *:nth-child(3),
+.attendance-list > *:nth-child(3),
+.table-wrap tbody > tr:nth-child(3),
+.upcoming-holiday-item:nth-child(3),
+.dialog-body > *:nth-child(3),
+.dialog-actions > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+.stats-row > *:nth-child(4),
+.metric-grid > *:nth-child(4),
+.stack-list > *:nth-child(4),
+.activity-feed > *:nth-child(4),
+.attendance-list > *:nth-child(4),
+.table-wrap tbody > tr:nth-child(4),
+.upcoming-holiday-item:nth-child(4) {
+  animation-delay: 180ms;
+}
+
+.stats-row > *:nth-child(5),
+.metric-grid > *:nth-child(5),
+.stack-list > *:nth-child(5),
+.activity-feed > *:nth-child(5),
+.attendance-list > *:nth-child(5),
+.table-wrap tbody > tr:nth-child(5),
+.upcoming-holiday-item:nth-child(5) {
+  animation-delay: 240ms;
+}
+
+.activity-feed > *:nth-child(6),
+.attendance-list > *:nth-child(6),
+.table-wrap tbody > tr:nth-child(6) {
+  animation-delay: 300ms;
+}
+
+.table-wrap tbody > tr:nth-child(7),
+.table-wrap tbody > tr:nth-child(8),
+.table-wrap tbody > tr:nth-child(9),
+.table-wrap tbody > tr:nth-child(10) {
+  animation-delay: 300ms;
+}
+
+.table-wrap tbody > tr:nth-child(n + 11) {
+  animation-delay: 0ms;
+}
+
+.calendar-grid.slide-left {
+  animation: slideLeft 0.25s ease-out;
+}
+
+.calendar-grid.slide-right {
+  animation: slideRight 0.25s ease-out;
+}
+
+@supports (view-transition-name: root) {
+  @view-transition {
+    navigation: auto;
+  }
+
+  ::view-transition-old(root) {
+    animation: fadeOutRoot 180ms ease-out both;
+  }
+
+  ::view-transition-new(root) {
+    animation: fadeInRoot 240ms var(--motion-ease-enter) both;
+  }
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardFadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes badgePop {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes counterBump {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes statusFlash {
+  0% { box-shadow: inset 0 0 0 0 var(--row-flash-color); }
+  30% { box-shadow: inset 0 0 0 999px var(--row-flash-color); }
+  100% { box-shadow: inset 0 0 0 0 transparent; }
+}
+
+@keyframes contentReveal {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes toastCountdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes slideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideRight {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes dotPulse {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes fadeOutRoot {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes fadeInRoot {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes btnSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .pill.high {
@@ -1462,5 +2079,19 @@ tbody tr:hover {
   .toast {
     min-width: 0;
     max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .page-transition-root {
+    opacity: 1;
+    transform: none;
   }
 }

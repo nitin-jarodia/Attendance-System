@@ -62,6 +62,7 @@ function renderBulkSummary(result) {
         : ""
     }
   `;
+  window.appUi.animateContentIn(bulkSummary);
 }
 
 function assignmentControls(student) {
@@ -103,6 +104,7 @@ function renderStudents(response) {
         </td>
       </tr>
     `;
+    window.appUi.animateContentIn(studentsTableBody);
     return;
   }
 
@@ -126,6 +128,7 @@ function renderStudents(response) {
       `
     )
     .join("");
+  window.appUi.animateContentIn(studentsTableBody);
 }
 
 async function loadStudents(page = currentPage) {

@@ -14,6 +14,7 @@ function renderActivityFeed(data) {
         <div class="empty-state-icon">📝</div>
         No activity yet. Actions will appear here as they happen.
       </div>`;
+    window.appUi.animateContentIn(activityFeed);
     return;
   }
 
@@ -38,6 +39,7 @@ function renderActivityFeed(data) {
         </div>
       </div>`;
   }).join("");
+  window.appUi.animateContentIn(activityFeed);
 }
 
 async function loadActivityLog(page = 1) {
@@ -63,6 +65,7 @@ async function loadActivityLog(page = 1) {
     }, loadActivityLog);
   } catch (err) {
     activityFeed.innerHTML = `<div class="empty-state">Failed to load activity log: ${window.appUi.escapeHtml(err.message)}</div>`;
+    window.appUi.animateContentIn(activityFeed);
   }
 }
 

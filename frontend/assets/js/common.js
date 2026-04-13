@@ -14,13 +14,9 @@ const ROLE_NAV_MAP = {
   principal: ["dashboard.html", "analytics.html", "attendance.html", "records.html", "calendar.html", "activity-log.html", "settings.html"],
 };
 
-const ROLE_BADGE_COLORS = {
-  teacher: "var(--primary)",
-  admin: "var(--warning)",
-  principal: "#ca8a04",
-};
-
 let activeDialogCleanup = null;
+let activeDialogRoot = null;
+let activeDialogEscHandler = null;
 
 function getTodayDate() {
   return new Date().toISOString().slice(0, 10);
@@ -77,38 +73,146 @@ function statusBadge(status) {
   return `<span class="badge ${status}">${escapeHtml(status)}</span>`;
 }
 
+function waitForTransitionEnd(target, fallbackMs, callback) {
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    callback();
+  };
+  const timeout = window.setTimeout(finish, fallbackMs);
+  target?.addEventListener("transitionend", (event) => {
+    if (event.target !== target) return;
+    window.clearTimeout(timeout);
+    finish();
+  }, { once: true });
+}
+
+function animateContentIn(target) {
+  if (!target) return;
+  target.classList.remove("content-loaded");
+  void target.offsetWidth;
+  target.classList.add("content-loaded");
+  window.setTimeout(() => target.classList.remove("content-loaded"), 320);
+}
+
+function ensureButtonTextWrapper(button) {
+  if (!button || button.querySelector(".btn-text")) return;
+  const textWrapper = document.createElement("span");
+  textWrapper.className = "btn-text";
+  while (button.firstChild) {
+    textWrapper.appendChild(button.firstChild);
+  }
+  button.appendChild(textWrapper);
+}
+
+function setButtonLoading(button, isLoading) {
+  if (!button) return;
+  ensureButtonTextWrapper(button);
+  if (isLoading) {
+    button.dataset.wasDisabled = button.disabled ? "true" : "false";
+    button.classList.add("btn-loading");
+    button.disabled = true;
+    return;
+  }
+  button.classList.remove("btn-loading");
+  if (button.dataset.wasDisabled !== "true") {
+    button.disabled = false;
+  }
+  delete button.dataset.wasDisabled;
+}
+
+function dismissToast(toast) {
+  if (!toast || toast.dataset.closing === "true") return;
+  toast.dataset.closing = "true";
+  toast.classList.remove("show", "paused");
+  toast.classList.add("hide");
+  waitForTransitionEnd(toast, 260, () => toast.remove());
+}
+
 function showToast(message, type = "success", options = {}) {
   const root = document.getElementById("toast-root");
   if (!root) return;
+  const duration = options.duration || 4000;
 
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
+  toast.style.setProperty("--toast-duration", `${duration}ms`);
   toast.innerHTML = `
     <div class="toast-content">
       <p>${escapeHtml(message)}</p>
       ${options.actionLabel ? `<button class="toast-action" type="button">${escapeHtml(options.actionLabel)}</button>` : ""}
     </div>
+    <div class="toast-progress" aria-hidden="true"></div>
   `;
   root.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add("show"));
 
   if (typeof options.onAction === "function") {
     toast.querySelector(".toast-action")?.addEventListener("click", async () => {
-      await options.onAction();
-      toast.remove();
+      const actionButton = toast.querySelector(".toast-action");
+      try {
+        setButtonLoading(actionButton, true);
+        await options.onAction();
+        dismissToast(toast);
+      } finally {
+        setButtonLoading(actionButton, false);
+      }
     });
   }
 
-  const timeout = window.setTimeout(() => toast.remove(), options.duration || 4000);
-  toast.addEventListener("mouseenter", () => window.clearTimeout(timeout), { once: true });
+  let timeout = window.setTimeout(() => dismissToast(toast), duration);
+  let startedAt = Date.now();
+  let remaining = duration;
+
+  const pauseTimer = () => {
+    if (toast.dataset.closing === "true") return;
+    window.clearTimeout(timeout);
+    remaining = Math.max(0, remaining - (Date.now() - startedAt));
+    toast.classList.add("paused");
+  };
+
+  const resumeTimer = () => {
+    if (toast.dataset.closing === "true" || remaining <= 0) return;
+    startedAt = Date.now();
+    toast.classList.remove("paused");
+    toast.querySelector(".toast-progress")?.style.setProperty("animation-duration", `${remaining}ms`);
+    timeout = window.setTimeout(() => dismissToast(toast), remaining);
+  };
+
+  toast.addEventListener("mouseenter", pauseTimer);
+  toast.addEventListener("mouseleave", resumeTimer);
 }
 
-function closeDialog() {
-  activeDialogCleanup?.();
-  activeDialogCleanup = null;
+function closeDialog(options = {}) {
+  const { immediate = false } = options;
+  if (!activeDialogRoot) return;
+  const dialogRoot = activeDialogRoot;
+
+  const cleanup = () => {
+    activeDialogCleanup?.();
+    activeDialogCleanup = null;
+    if (activeDialogRoot === dialogRoot) {
+      activeDialogRoot = null;
+    }
+    dialogRoot.remove();
+  };
+
+  if (immediate) {
+    cleanup();
+    return;
+  }
+
+  if (dialogRoot.dataset.closing === "true") return;
+  dialogRoot.dataset.closing = "true";
+  dialogRoot.classList.remove("open");
+  dialogRoot.classList.add("closing");
+  document.body.classList.remove("dialog-open");
+  waitForTransitionEnd(dialogRoot.querySelector(".dialog-card"), 180, cleanup);
 }
 
 function showDialog({ title, description = "", bodyHtml = "", actions = [] }) {
-  closeDialog();
+  closeDialog({ immediate: true });
 
   const dialogRoot = document.createElement("div");
   dialogRoot.className = "dialog-backdrop";
@@ -135,11 +239,16 @@ function showDialog({ title, description = "", bodyHtml = "", actions = [] }) {
     if (action.id) button.dataset.actionId = action.id;
     if (index === 0) button.autofocus = true;
     button.addEventListener("click", async () => {
-      if (typeof action.onClick === "function") {
-        const result = await action.onClick(dialogRoot);
-        if (result === false) return;
+      try {
+        setButtonLoading(button, true);
+        if (typeof action.onClick === "function") {
+          const result = await action.onClick(dialogRoot);
+          if (result === false) return;
+        }
+        if (!action.keepOpen) closeDialog();
+      } finally {
+        setButtonLoading(button, false);
       }
-      if (!action.keepOpen) closeDialog();
     });
     actionsContainer.appendChild(button);
   });
@@ -148,15 +257,21 @@ function showDialog({ title, description = "", bodyHtml = "", actions = [] }) {
   dialogRoot.addEventListener("click", (event) => {
     if (event.target === dialogRoot) closeDialog();
   });
-  document.addEventListener("keydown", function escHandler(e) {
-    if (e.key === "Escape") { closeDialog(); document.removeEventListener("keydown", escHandler); }
-  });
+  activeDialogEscHandler = (event) => {
+    if (event.key === "Escape") closeDialog();
+  };
+  document.addEventListener("keydown", activeDialogEscHandler);
 
   document.body.appendChild(dialogRoot);
   document.body.classList.add("dialog-open");
+  activeDialogRoot = dialogRoot;
+  requestAnimationFrame(() => dialogRoot.classList.add("open"));
   activeDialogCleanup = () => {
     document.body.classList.remove("dialog-open");
-    dialogRoot.remove();
+    if (activeDialogEscHandler) {
+      document.removeEventListener("keydown", activeDialogEscHandler);
+      activeDialogEscHandler = null;
+    }
   };
 
   return dialogRoot;
@@ -181,8 +296,7 @@ function renderCurrentUser(user) {
   });
   document.querySelectorAll("[data-user-role]").forEach((el) => {
     if (user?.role) {
-      const color = ROLE_BADGE_COLORS[user.role] || "var(--muted)";
-      el.innerHTML = `<span class="role-badge" style="background:${color};color:#fff;padding:3px 10px;border-radius:999px;font-size:0.75rem;font-weight:700;text-transform:uppercase;">${escapeHtml(user.role)}</span>`;
+      el.innerHTML = `<span class="role-badge role-${escapeHtml(user.role)}">${escapeHtml(user.role)}</span>`;
     } else {
       el.textContent = "";
     }
@@ -364,6 +478,14 @@ function initializeSidebar() {
   syncSidebarState();
 }
 
+function initializePageMotion() {
+  const pageRoot = document.querySelector(".main-panel, .login-shell");
+  if (!pageRoot || pageRoot.dataset.motionReady === "true") return;
+  pageRoot.dataset.motionReady = "true";
+  pageRoot.classList.add("page-transition-root");
+  requestAnimationFrame(() => pageRoot.classList.add("page-transition-ready"));
+}
+
 function isReadOnly() {
   const user = getStoredUser();
   return user?.role === "principal";
@@ -374,6 +496,7 @@ async function initializeApp() {
   setActiveNav();
   attachLogoutHandlers();
   initializeSidebar();
+  initializePageMotion();
 
   if (document.body.dataset.publicPage === "true") {
     return { user: getStoredUser() };
@@ -425,6 +548,7 @@ function renderPagination(container, meta, onPageChange) {
     <span class="pagination-meta">Page ${meta.page} of ${totalPages}</span>
     <button class="btn btn-secondary" type="button" ${meta.page >= totalPages ? "disabled" : ""} data-page="${meta.page + 1}">Next</button>
   `;
+  animateContentIn(container);
 
   container.querySelectorAll("[data-page]").forEach((button) => {
     button.addEventListener("click", () => onPageChange(Number(button.dataset.page)));
@@ -467,10 +591,12 @@ document.addEventListener("DOMContentLoaded", () => {
   setActiveNav();
   attachLogoutHandlers();
   initializeSidebar();
+  initializePageMotion();
   renderCurrentUser(getStoredUser());
 });
 
 window.appUi = {
+  animateContentIn,
   clearAuthState,
   closeDialog,
   escapeHtml,
@@ -484,6 +610,7 @@ window.appUi = {
   relativeTime,
   activityIcon,
   renderPagination,
+  setButtonLoading,
   setAuthState,
   setLoading,
   setPreference,

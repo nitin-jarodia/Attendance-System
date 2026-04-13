@@ -106,6 +106,7 @@ function renderMetrics(container, metrics) {
       `
     )
     .join("");
+  window.appUi.animateContentIn(container);
 }
 
 function renderStudentInsight(insight) {
@@ -130,6 +131,7 @@ function renderClassInsight(insight) {
 
   if (!insight.low_attendance_students.length) {
     classLowAttendanceList.innerHTML = `<div class="empty-state">No low-attendance students in this class right now.</div>`;
+    window.appUi.animateContentIn(classLowAttendanceList);
     return;
   }
 
@@ -143,6 +145,7 @@ function renderClassInsight(insight) {
       `
     )
     .join("");
+  window.appUi.animateContentIn(classLowAttendanceList);
 }
 
 function renderPredictions(predictions) {
@@ -152,6 +155,7 @@ function renderPredictions(predictions) {
         <td colspan="7"><div class="empty-state">No at-risk students found for the current filters.</div></td>
       </tr>
     `;
+    window.appUi.animateContentIn(predictionsBody);
     return;
   }
 
@@ -170,6 +174,7 @@ function renderPredictions(predictions) {
       `
     )
     .join("");
+  window.appUi.animateContentIn(predictionsBody);
 }
 
 function renderTrendChart(insight) {
@@ -251,6 +256,7 @@ async function loadStudentInsight() {
   if (!rollNumber) {
     studentInsightMetrics.innerHTML = "";
     studentInsightText.textContent = "Select a student to load an AI insight.";
+    window.appUi.animateContentIn(studentInsightText);
     return;
   }
 
@@ -284,6 +290,8 @@ async function loadAnalytics() {
     classInsightMetrics.innerHTML = "";
     classInsightText.textContent = "No class insight is available yet.";
     classLowAttendanceList.innerHTML = `<div class="empty-state">Create a class and mark attendance to unlock trends.</div>`;
+    window.appUi.animateContentIn(classInsightText);
+    window.appUi.animateContentIn(classLowAttendanceList);
   }
 
   await loadStudentOptions();

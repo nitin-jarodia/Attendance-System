@@ -29,6 +29,7 @@ function renderClasses() {
         </td>
       </tr>
     `;
+    window.appUi.animateContentIn(classesTableBody);
     return;
   }
 
@@ -59,6 +60,7 @@ function renderClasses() {
       `
     )
     .join("");
+  window.appUi.animateContentIn(classesTableBody);
 }
 
 async function loadClasses() {
@@ -91,6 +93,7 @@ async function loadUsers() {
           <td colspan="4"><div class="empty-state">No users found.</div></td>
         </tr>
       `;
+  window.appUi.animateContentIn(usersTableBody);
 }
 
 createClassForm?.addEventListener("submit", async (event) => {

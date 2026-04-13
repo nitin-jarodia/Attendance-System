@@ -41,6 +41,7 @@ async function loadRecords(page = currentPage) {
         </td>
       </tr>
     `;
+    window.appUi.animateContentIn(recordsTableBody);
     return;
   }
 
@@ -84,6 +85,7 @@ async function loadRecords(page = currentPage) {
       }
     )
     .join("");
+  window.appUi.animateContentIn(recordsTableBody);
   window.appUi.renderPagination(paginationEl, response, loadRecords);
 }
 

@@ -29,6 +29,9 @@ let searchTimer = null;
 let availableClasses = [];
 let realtimeSocket = null;
 let selectedIndex = 0;
+let lastStatusChange = null;
+let statusFlashTimer = null;
+let previousSummaryCounts = null;
 
 function getQueryParam(name) {
   return new URLSearchParams(window.location.search).get(name);
@@ -115,12 +118,26 @@ function updateSummary() {
     { present: 0, absent: 0, late: 0, unmarked: 0 }
   );
 
-  totalCountEl.textContent = attendanceState.length;
-  presentCountEl.textContent = counts.present;
-  absentCountEl.textContent = counts.absent;
-  lateCountEl.textContent = counts.late;
-  if (unmarkedCountEl) unmarkedCountEl.textContent = counts.unmarked;
+  const applyCount = (element, nextValue, key) => {
+    if (!element) return;
+    element.classList.add("counter-number");
+    const changed = previousSummaryCounts && previousSummaryCounts[key] !== nextValue;
+    element.textContent = nextValue;
+    if (changed) {
+      element.classList.remove("updated");
+      void element.offsetWidth;
+      element.classList.add("updated");
+      window.setTimeout(() => element.classList.remove("updated"), 320);
+    }
+  };
+
+  applyCount(totalCountEl, attendanceState.length, "total");
+  applyCount(presentCountEl, counts.present, "present");
+  applyCount(absentCountEl, counts.absent, "absent");
+  applyCount(lateCountEl, counts.late, "late");
+  if (unmarkedCountEl) applyCount(unmarkedCountEl, counts.unmarked, "unmarked");
   if (stickySaveSummary) stickySaveSummary.textContent = `Save attendance for ${attendanceDateInput.value} · ${counts.absent} absent · ${counts.late} late`;
+  previousSummaryCounts = { total: attendanceState.length, ...counts };
   persistDraft();
 }
 
@@ -130,6 +147,7 @@ function updateStudentStatus(rollNumber, newStatus) {
     const effectiveStatus = newStatus === "toggle"
       ? (!s.status || s.status === "present" ? "absent" : "present")
       : newStatus;
+    lastStatusChange = { rollNumber, status: effectiveStatus };
     return { ...s, status: effectiveStatus };
   });
   renderAttendanceRows();
@@ -152,12 +170,15 @@ function renderAttendanceRows() {
   attendanceContainer.innerHTML = attendanceState.map((student, index) => {
     const status = student.status || "unmarked";
     const bgClass = status === "unmarked" ? "" : `attendance-state-${status}`;
+    const flashClass = lastStatusChange?.rollNumber === student.roll_number && status !== "unmarked"
+      ? `row-status-changed status-flash-${status}`
+      : "";
     const editedTag = student.edited_by
       ? `<span class="edited-badge" title="Changed from ${window.appUi.escapeHtml(student.previous_status || "?")} by ${window.appUi.escapeHtml(student.edited_by)}">edited</span>`
       : "";
 
     return `
-      <div class="attendance-row ${bgClass} ${selectedIndex === index ? "is-selected" : ""}" data-roll="${student.roll_number}" data-index="${index}" tabindex="0">
+      <div class="attendance-row ${bgClass} ${flashClass} ${selectedIndex === index ? "is-selected" : ""}" data-roll="${student.roll_number}" data-index="${index}" tabindex="0">
         <div class="student-row-main">
           <div class="student-avatar">${createAvatar(student.name)}</div>
           <div class="student-meta">
@@ -172,6 +193,7 @@ function renderAttendanceRows() {
         </div>
       </div>`;
   }).join("");
+  window.appUi.animateContentIn(attendanceContainer);
 
   attendanceContainer.querySelectorAll(".attendance-row").forEach((row) => {
     const rollNumber = Number(row.dataset.roll);
@@ -202,6 +224,18 @@ function renderAttendanceRows() {
     });
   });
 
+  if (lastStatusChange) {
+    window.clearTimeout(statusFlashTimer);
+    statusFlashTimer = window.setTimeout(() => {
+      const changedRoll = lastStatusChange?.rollNumber;
+      const changedRow = changedRoll
+        ? attendanceContainer.querySelector(`.attendance-row[data-roll="${changedRoll}"]`)
+        : null;
+      changedRow?.classList.remove("row-status-changed", "status-flash-present", "status-flash-late", "status-flash-absent");
+      lastStatusChange = null;
+    }, 520);
+  }
+
   updateSummary();
 }
 
@@ -212,6 +246,7 @@ async function loadLateArrivals() {
     const data = await window.apiClient.getLateArrivals({ class_id: classId, page: 1, page_size: 20 });
     if (!data.items.length) {
       lateArrivalsBody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state-icon">🎉</div>No late arrivals this period.</div></td></tr>`;
+      window.appUi.animateContentIn(lateArrivalsBody);
       return;
     }
     lateArrivalsBody.innerHTML = data.items.map((item) => {
@@ -226,8 +261,10 @@ async function loadLateArrivals() {
         <td>${freqBadge}</td>
       </tr>`;
     }).join("");
+    window.appUi.animateContentIn(lateArrivalsBody);
   } catch (err) {
     lateArrivalsBody.innerHTML = `<tr><td colspan="6"><div class="empty-state">Failed to load late arrivals.</div></td></tr>`;
+    window.appUi.animateContentIn(lateArrivalsBody);
   }
 }
 
@@ -265,16 +302,23 @@ async function saveAttendance() {
     return;
   }
 
-  const now = new Date().toISOString();
-  const payload = attendanceState.map((s) => ({
-    roll_number: s.roll_number,
-    status: s.status || "absent",
-    late_arrival_time: s.status === "late" ? now : null,
-  }));
-  await window.apiClient.markAttendance(attendanceDateInput.value, payload);
-  window.localStorage.removeItem(getDraftKey());
-  window.appUi.showToast("Attendance saved successfully.");
-  await loadAttendancePage();
+  window.appUi.setButtonLoading(saveAttendanceButton, true);
+  window.appUi.setButtonLoading(stickySaveButton, true);
+  try {
+    const now = new Date().toISOString();
+    const payload = attendanceState.map((s) => ({
+      roll_number: s.roll_number,
+      status: s.status || "absent",
+      late_arrival_time: s.status === "late" ? now : null,
+    }));
+    await window.apiClient.markAttendance(attendanceDateInput.value, payload);
+    window.localStorage.removeItem(getDraftKey());
+    window.appUi.showToast("Attendance saved successfully.");
+    await loadAttendancePage();
+  } finally {
+    window.appUi.setButtonLoading(saveAttendanceButton, false);
+    window.appUi.setButtonLoading(stickySaveButton, false);
+  }
 }
 
 function setupRealtimeRefresh() {
