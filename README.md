@@ -1,8 +1,17 @@
 # Attendance Management System
 
-A Tier 2 Attendance Management System built with FastAPI, MySQL, SQLAlchemy, and a vanilla HTML/CSS/JavaScript frontend.
+A modern Attendance Management System built with FastAPI, MySQL, SQLAlchemy, Groq AI integration, realtime updates, and a vanilla HTML/CSS/JavaScript frontend.
 
-## Tier 2 Highlights
+## Advanced Highlights
+
+- Groq-powered attendance summaries with safe rule-based fallback.
+- Student-level and class-level AI insights.
+- Predictive at-risk attendance detection.
+- Realtime attendance refresh over WebSockets.
+- Voice command shortcuts using the browser Web Speech API.
+- Analytics page with class comparison and attendance trend charts.
+
+## Core Platform Highlights
 
 - Class and section management with student-to-class assignment.
 - JWT login with role-based access for `admin` and `teacher`.
@@ -10,7 +19,7 @@ A Tier 2 Attendance Management System built with FastAPI, MySQL, SQLAlchemy, and
 - Student and attendance search/filter flows with pagination.
 - Student-wise attendance analytics and low-attendance detection.
 - Class-wise attendance analytics.
-- Backward-compatible Tier 1 student and attendance APIs extended with optional filters.
+- Existing student and attendance APIs are preserved and extended with optional filters.
 
 ## Project Structure
 
@@ -37,7 +46,7 @@ attendance system/
 │   └── students.html
 ├── sql/
 │   ├── schema.sql
-│   └── tier2_upgrade.sql
+│   └── legacy_upgrade.sql
 ├── .env.example
 ├── README.md
 └── requirements.txt
@@ -63,6 +72,11 @@ attendance system/
 - `GET /dashboard/summary`
 - `GET /analytics/students`
 - `GET /analytics/classes`
+- `GET /analytics/summary`
+- `GET /analytics/student/{roll_number}`
+- `GET /analytics/class/{class_id}`
+- `GET /analytics/predictions`
+- `WS /realtime/attendance`
 
 ### 4. Search, Filters, and Pagination
 
@@ -106,7 +120,7 @@ attendance system/
 
 ## Database Schema
 
-Tier 2 introduces:
+The current schema includes:
 
 - `classes`
 - `users`
@@ -117,9 +131,9 @@ Tier 2 introduces:
 Use:
 
 - `sql/schema.sql` for a fresh setup
-- `sql/tier2_upgrade.sql` to upgrade an existing Tier 1 schema manually
+- `sql/legacy_upgrade.sql` to upgrade an older schema manually
 
-The application also runs a safe startup schema upgrade helper for common Tier 2 changes.
+The application also runs a safe startup schema upgrade helper for common compatibility changes.
 
 ## Environment Variables
 
@@ -136,6 +150,9 @@ JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=720
 BOOTSTRAP_ADMIN_USERNAME=admin
 BOOTSTRAP_ADMIN_PASSWORD=admin12345
+GROQ_API_KEY=
+GROQ_MODEL=llama-3.1-8b-instant
+GROQ_TIMEOUT_SECONDS=5.0
 ```
 
 ## Run Instructions
@@ -160,10 +177,10 @@ For a new database:
 SOURCE sql/schema.sql;
 ```
 
-For an existing Tier 1 database:
+For an existing older database:
 
 ```sql
-SOURCE sql/tier2_upgrade.sql;
+SOURCE sql/legacy_upgrade.sql;
 ```
 
 ### 4. Create and activate the virtual environment
@@ -200,6 +217,7 @@ uvicorn app.main:app --reload --port 8001
 
 ## Notes
 
-- Existing Tier 1 endpoints are preserved and extended with optional filters rather than being replaced.
+- Existing endpoints are preserved and extended with optional filters rather than being replaced.
 - Attendance uniqueness is still enforced by both service logic and the unique database constraint on `(roll_number, date)`.
 - The database URL is now built safely, so MySQL passwords containing special characters work correctly.
+- If `GROQ_API_KEY` is not configured or the API times out, the analytics endpoints return deterministic fallback summaries instead of failing.

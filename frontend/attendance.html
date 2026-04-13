@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/assets/css/styles.css">
   <script src="/assets/js/api.js" defer></script>
   <script src="/assets/js/common.js" defer></script>
+  <script src="/assets/js/voice.js" defer></script>
   <script src="/assets/js/attendance.js" defer></script>
 </head>
 <body>
@@ -15,14 +16,16 @@
       <div>
         <div class="sidebar-brand">
           <h1>Attendance Pro</h1>
-          <p>Tier 2 management suite</p>
+          <p>School attendance workspace</p>
         </div>
         <nav class="sidebar-nav">
           <a class="nav-link" href="dashboard.html" data-nav>Dashboard</a>
+          <a class="nav-link" href="analytics.html" data-nav>Analytics</a>
           <a class="nav-link" href="students.html" data-nav>Students</a>
           <a class="nav-link" href="attendance.html" data-nav>Attendance</a>
           <a class="nav-link" href="records.html" data-nav>Records</a>
           <a class="nav-link" href="classes.html" data-nav>Classes</a>
+          <a class="nav-link" href="settings.html" data-nav>Settings</a>
         </nav>
       </div>
       <div class="sidebar-user">
@@ -35,9 +38,9 @@
     <main class="main-panel">
       <header class="page-header">
         <div>
-          <p class="eyebrow">Class-wise attendance</p>
+          <p class="eyebrow">Fast daily attendance</p>
           <h2>Attendance</h2>
-          <p>Select a class, review the roster, and save a full attendance batch for the day.</p>
+          <p>Select a class, review the roster, and mark absences in just a few taps.</p>
         </div>
       </header>
 
@@ -58,8 +61,24 @@
               <label for="attendance-date">Attendance Date</label>
               <input class="input" id="attendance-date" type="date">
             </div>
+            <div class="field compact-field">
+              <label for="attendance-sort">Sort by</label>
+              <select class="select" id="attendance-sort">
+                <option value="roll">Roll number</option>
+                <option value="name">Name</option>
+              </select>
+            </div>
           </div>
-          <button class="btn btn-primary" id="save-attendance-button" type="button">Save Attendance</button>
+          <div class="hero-actions">
+            <button class="btn btn-secondary" id="voice-command-button" type="button">Voice Command</button>
+            <button class="btn btn-primary" id="save-attendance-button" type="button">Save Attendance</button>
+          </div>
+        </div>
+        <p class="helper-text" id="voice-command-feedback">Use voice commands like “mark attendance for CSE-A” or “save attendance”.</p>
+        <div class="bulk-toolbar">
+          <button class="btn btn-secondary" id="mark-all-present-button" type="button">✅ Mark All Present</button>
+          <button class="btn btn-secondary" id="mark-all-absent-button" type="button">❌ Mark All Absent</button>
+          <button class="btn btn-secondary" id="reset-all-button" type="button">↩️ Reset All</button>
         </div>
       </section>
 
@@ -80,13 +99,25 @@
           <span>Late</span>
           <strong id="attendance-late">0</strong>
         </article>
+        <article class="stat-card">
+          <span>Quick status</span>
+          <strong id="attendance-quick-counter">Present: 0 | Absent: 0 | Unmarked: 0</strong>
+        </article>
       </section>
 
       <section class="card">
         <h3>Roster</h3>
-        <p class="section-copy">Students default to <strong>absent</strong> until changed. Teachers only see their assigned class.</p>
+        <p class="section-copy">Students are listed with roll numbers first. Tap a row once to mark absent, tap again to return present, or use the small late button if needed.</p>
         <div id="attendance-container" class="attendance-list"></div>
       </section>
+
+      <div class="sticky-save-bar">
+        <div>
+          <strong id="sticky-save-summary">Ready to save today's attendance</strong>
+          <span class="helper-text">Your draft is saved automatically while you work.</span>
+        </div>
+        <button class="btn btn-primary" id="save-attendance-button-sticky" type="button">Save Attendance</button>
+      </div>
     </main>
   </div>
 

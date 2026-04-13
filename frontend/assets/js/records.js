@@ -9,6 +9,7 @@ const paginationEl = document.getElementById("records-pagination");
 
 let currentPage = 1;
 let searchTimer = null;
+let realtimeSocket = null;
 
 function renderClassOptions(classes) {
   recordsClassInput.innerHTML = `
@@ -78,6 +79,24 @@ async function loadRecords(page = currentPage) {
     )
     .join("");
   window.appUi.renderPagination(paginationEl, response, loadRecords);
+}
+
+function setupRealtimeRefresh() {
+  realtimeSocket = window.apiClient.createAttendanceRealtimeConnection((message) => {
+    if (message.type !== "attendance_updated") {
+      return;
+    }
+
+    const selectedClassId = recordsClassInput.value ? Number(recordsClassInput.value) : null;
+    const classMatch = !selectedClassId || message.class_ids.includes(selectedClassId);
+    const dateMatch = !recordsDateInput.value || message.attendance_date === recordsDateInput.value;
+    if (!classMatch || !dateMatch) {
+      return;
+    }
+
+    window.appUi.showToast("Records refreshed after a live attendance change.");
+    loadRecords(currentPage).catch((error) => window.appUi.showToast(error.message, "error"));
+  });
 }
 
 recordsDateInput.addEventListener("change", async () => {
@@ -172,8 +191,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     recordsDateInput.value = window.appUi.getTodayDate();
     const classes = await window.apiClient.getClasses();
     renderClassOptions(classes);
+    setupRealtimeRefresh();
     await loadRecords(1);
   } catch (error) {
     window.appUi.showToast(error.message, "error");
   }
+});
+
+window.addEventListener("beforeunload", () => {
+  realtimeSocket?.close();
 });

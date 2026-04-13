@@ -1,11 +1,14 @@
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user, require_teacher_or_admin
 from app.db.database import get_db
+from app.models.student import Student
 from app.models.user import User
+from app.realtime.manager import attendance_realtime_manager
 from app.schemas.attendance import (
     AttendanceDeleteRequest,
     AttendanceDeleteResponse,
@@ -30,17 +33,30 @@ router = APIRouter(prefix="/attendance", tags=["attendance"])
 
 
 @router.post("/mark", response_model=AttendanceMarkResponse)
-def save_attendance(
+async def save_attendance(
     payload: AttendanceMarkRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
 ) -> AttendanceMarkResponse:
     try:
-        return mark_attendance(db, payload, current_user)
+        response = mark_attendance(db, payload, current_user)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except PermissionError as exc:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
+    changed_roll_numbers = [record.roll_number for record in payload.records]
+    class_ids = list(
+        db.scalars(select(Student.class_id).where(Student.roll_number.in_(changed_roll_numbers))).all()
+    )
+    await attendance_realtime_manager.emit_attendance_event(
+        action="mark",
+        attendance_date=response.date,
+        class_ids=class_ids,
+        roll_numbers=changed_roll_numbers,
+        message=f"Attendance saved for {response.date.isoformat()}.",
+    )
+    return response
 
 
 @router.get("", response_model=list[AttendanceRecordRead])
@@ -92,27 +108,43 @@ def search_attendance_route(
 
 
 @router.put("/update", response_model=AttendanceRecordRead)
-def update_attendance_status(
+async def update_attendance_status(
     payload: AttendanceUpdateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
 ) -> AttendanceRecordRead:
     try:
-        return update_attendance(db, payload, current_user)
+        record = update_attendance(db, payload, current_user)
     except LookupError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    await attendance_realtime_manager.emit_attendance_event(
+        action="update",
+        attendance_date=record.date,
+        class_ids=[record.class_id],
+        roll_numbers=[record.roll_number],
+        message=f"Attendance updated for roll {record.roll_number}.",
+    )
+    return record
 
 
 @router.delete("/delete", response_model=AttendanceDeleteResponse)
-def remove_attendance_record(
+async def remove_attendance_record(
     payload: AttendanceDeleteRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_teacher_or_admin),
 ) -> AttendanceDeleteResponse:
     try:
-        delete_attendance(db, payload, current_user)
+        deleted_record = delete_attendance(db, payload, current_user)
     except LookupError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    await attendance_realtime_manager.emit_attendance_event(
+        action="delete",
+        attendance_date=payload.date,
+        class_ids=[deleted_record.class_id],
+        roll_numbers=[payload.roll_number],
+        message=f"Attendance deleted for roll {payload.roll_number}.",
+    )
 
     return AttendanceDeleteResponse(
         message="Attendance record deleted successfully.",

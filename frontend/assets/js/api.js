@@ -93,6 +93,10 @@ const apiClient = {
     return this.request("/dashboard/summary");
   },
 
+  getAnalyticsSummary(params = {}) {
+    return this.request(`/analytics/summary${this.buildQuery(params)}`);
+  },
+
   getStudents(params = {}) {
     return this.request(`/students${this.buildQuery(params)}`);
   },
@@ -189,6 +193,73 @@ const apiClient = {
 
   getClassAnalytics(params = {}) {
     return this.request(`/analytics/classes${this.buildQuery(params)}`);
+  },
+
+  getStudentInsight(rollNumber, params = {}) {
+    return this.request(`/analytics/student/${encodeURIComponent(rollNumber)}${this.buildQuery(params)}`);
+  },
+
+  getClassInsight(classId, params = {}) {
+    return this.request(`/analytics/class/${encodeURIComponent(classId)}${this.buildQuery(params)}`);
+  },
+
+  getPredictions(params = {}) {
+    return this.request(`/analytics/predictions${this.buildQuery(params)}`);
+  },
+
+  createAttendanceRealtimeConnection(onMessage) {
+    const token = this.getToken();
+    if (!token) {
+      return null;
+    }
+
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const socket = new WebSocket(
+      `${protocol}//${window.location.host}/realtime/attendance?token=${encodeURIComponent(token)}`
+    );
+
+    if (typeof onMessage === "function") {
+      socket.addEventListener("message", (event) => {
+        try {
+          onMessage(JSON.parse(event.data));
+        } catch (_) {
+          onMessage({ type: "message", raw: event.data });
+        }
+      });
+    }
+
+    return socket;
+  },
+
+  getActivityLog(limit = 50) {
+    return this.request(`/settings/activity-log${this.buildQuery({ limit })}`);
+  },
+
+  resetAttendanceDay(targetDate) {
+    return this.request("/settings/reset/day", {
+      method: "POST",
+      body: JSON.stringify({ target_date: targetDate }),
+    });
+  },
+
+  resetAttendanceToday() {
+    return this.request("/settings/reset/today", {
+      method: "POST",
+    });
+  },
+
+  resetAllAttendance(confirmationText) {
+    return this.request("/settings/reset/all", {
+      method: "POST",
+      body: JSON.stringify({ confirmation_text: confirmationText }),
+    });
+  },
+
+  undoReset(snapshotId) {
+    return this.request("/settings/reset/undo", {
+      method: "POST",
+      body: JSON.stringify({ snapshot_id: snapshotId }),
+    });
   },
 };
 

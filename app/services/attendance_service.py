@@ -251,9 +251,11 @@ def update_attendance(
     )
 
 
-def delete_attendance(db: Session, payload: AttendanceDeleteRequest, current_user: User) -> None:
+def delete_attendance(
+    db: Session, payload: AttendanceDeleteRequest, current_user: User
+) -> AttendanceRecordRead:
     statement = (
-        select(Attendance)
+        select(Attendance, Student.name, Student.class_id, Classroom.name.label("class_name"))
         .join(Student, Student.roll_number == Attendance.roll_number)
         .where(
             and_(
@@ -265,12 +267,28 @@ def delete_attendance(db: Session, payload: AttendanceDeleteRequest, current_use
     if current_user.role == "teacher":
         statement = statement.where(Student.class_id == current_user.assigned_class_id)
 
-    attendance = db.scalar(statement)
-    if not attendance:
+    row = db.execute(statement).first()
+    if not row:
         raise LookupError("Attendance record not found.")
 
+    attendance = row.Attendance
+    deleted_record = _serialize_attendance_row(
+        type(
+            "AttendanceRow",
+            (),
+            {
+                "roll_number": attendance.roll_number,
+                "name": row.name,
+                "status": attendance.status,
+                "date": attendance.date,
+                "class_id": row.class_id,
+                "class_name": row.class_name,
+            },
+        )()
+    )
     db.delete(attendance)
     db.commit()
+    return deleted_record
 
 
 def build_csv_export(

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings | Attendance Management System</title>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <script src="/assets/js/api.js" defer></script>
+  <script src="/assets/js/common.js" defer></script>
+  <script src="/assets/js/settings.js" defer></script>
+</head>
+<body>
+  <div class="shell-layout">
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-brand">
+          <h1>Attendance Pro</h1>
+          <p>School attendance workspace</p>
+        </div>
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="dashboard.html" data-nav>Dashboard</a>
+          <a class="nav-link" href="analytics.html" data-nav>Analytics</a>
+          <a class="nav-link" href="students.html" data-nav>Students</a>
+          <a class="nav-link" href="attendance.html" data-nav>Attendance</a>
+          <a class="nav-link" href="records.html" data-nav>Records</a>
+          <a class="nav-link" href="classes.html" data-nav>Classes</a>
+          <a class="nav-link" href="settings.html" data-nav>Settings</a>
+        </nav>
+      </div>
+      <div class="sidebar-user">
+        <strong data-user-name>Loading...</strong>
+        <span data-user-role></span>
+        <button class="btn btn-secondary" type="button" data-logout>Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Preferences and safety controls</p>
+          <h2>Settings</h2>
+          <p>Adjust everyday preferences, manage data resets safely, and review recent activity without overwhelming teachers.</p>
+        </div>
+      </header>
+
+      <section class="stack-sections">
+        <details class="settings-panel" open>
+          <summary>General</summary>
+          <div class="settings-panel-body">
+            <div class="settings-option">
+              <div>
+                <strong>Dark mode</strong>
+                <p class="section-copy">Use a calmer low-light theme for evening work.</p>
+              </div>
+              <label class="switch">
+                <input id="dark-mode-toggle" type="checkbox">
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+            <div class="settings-option">
+              <div>
+                <strong>Default attendance mode</strong>
+                <p class="section-copy">Choose whether teachers start with everyone present or fully unmarked.</p>
+              </div>
+              <select class="select settings-select" id="default-attendance-mode">
+                <option value="all_present">All students present</option>
+                <option value="unmarked">Start unmarked</option>
+              </select>
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-panel" open data-admin-only>
+          <summary>Data Management</summary>
+          <div class="settings-panel-body">
+            <div class="settings-option settings-option-column">
+              <div>
+                <strong>Reset Attendance Data</strong>
+                <p class="section-copy">Reset one day, reset today quickly, or clear everything with an extra confirmation step.</p>
+              </div>
+              <button class="btn btn-danger" id="open-reset-dialog" type="button">⚠ Reset Data</button>
+            </div>
+            <div>
+              <h3>Activity Log</h3>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>User</th>
+                      <th>Action</th>
+                      <th>Details</th>
+                    </tr>
+                  </thead>
+                  <tbody id="activity-log-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-panel">
+          <summary>Voice Settings</summary>
+          <div class="settings-panel-body">
+            <div class="settings-option">
+              <div>
+                <strong>Sound feedback</strong>
+                <p class="section-copy">Play subtle feedback when attendance changes are saved.</p>
+              </div>
+              <label class="switch">
+                <input id="sound-feedback-toggle" type="checkbox">
+                <span class="switch-slider"></span>
+              </label>
+            </div>
+            <div class="settings-option">
+              <div>
+                <strong>Browser support</strong>
+                <p class="section-copy">Voice commands work best in Chrome with microphone access enabled.</p>
+              </div>
+              <span class="badge late" id="voice-support-badge">Checking…</span>
+            </div>
+          </div>
+        </details>
+
+        <details class="settings-panel">
+          <summary>About</summary>
+          <div class="settings-panel-body">
+            <p class="section-copy">Attendance Pro is designed for quick, classroom-friendly attendance marking with simple analytics, reliable exports, and optional AI insights.</p>
+          </div>
+        </details>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toast-root"></div>
+</body>
+</html>

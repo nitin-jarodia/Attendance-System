@@ -103,3 +103,50 @@ def ensure_database_schema(engine: Engine) -> None:
             connection.execute(text("CREATE INDEX idx_users_role ON users(role)"))
         if not _has_index(user_indexes, "idx_users_assigned_class_id"):
             connection.execute(text("CREATE INDEX idx_users_assigned_class_id ON users(assigned_class_id)"))
+
+        if "activity_logs" not in set(inspector.get_table_names()):
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE activity_logs (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        actor_username VARCHAR(100) NOT NULL,
+                        action VARCHAR(100) NOT NULL,
+                        details TEXT NOT NULL,
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+            )
+
+        inspector = inspect(connection)
+        activity_indexes = inspector.get_indexes("activity_logs")
+        if not _has_index(activity_indexes, "idx_activity_logs_actor"):
+            connection.execute(text("CREATE INDEX idx_activity_logs_actor ON activity_logs(actor_username)"))
+        if not _has_index(activity_indexes, "idx_activity_logs_action"):
+            connection.execute(text("CREATE INDEX idx_activity_logs_action ON activity_logs(action)"))
+
+        if "reset_snapshots" not in set(inspector.get_table_names()):
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE reset_snapshots (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        actor_username VARCHAR(100) NOT NULL,
+                        scope VARCHAR(50) NOT NULL,
+                        target_date VARCHAR(20) NULL,
+                        snapshot_data LONGTEXT NOT NULL,
+                        expires_at DATETIME NOT NULL,
+                        restored_at DATETIME NULL,
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+            )
+
+        inspector = inspect(connection)
+        snapshot_indexes = inspector.get_indexes("reset_snapshots")
+        if not _has_index(snapshot_indexes, "idx_reset_snapshots_actor"):
+            connection.execute(text("CREATE INDEX idx_reset_snapshots_actor ON reset_snapshots(actor_username)"))
+        if not _has_index(snapshot_indexes, "idx_reset_snapshots_expires_at"):
+            connection.execute(text("CREATE INDEX idx_reset_snapshots_expires_at ON reset_snapshots(expires_at)"))

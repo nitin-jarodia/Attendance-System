@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard | Attendance Management System</title>
   <link rel="stylesheet" href="/assets/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
   <script src="/assets/js/api.js" defer></script>
   <script src="/assets/js/common.js" defer></script>
   <script src="/assets/js/dashboard.js" defer></script>
@@ -15,14 +16,16 @@
       <div>
         <div class="sidebar-brand">
           <h1>Attendance Pro</h1>
-          <p>Tier 2 management suite</p>
+          <p>School attendance workspace</p>
         </div>
         <nav class="sidebar-nav">
           <a class="nav-link" href="dashboard.html" data-nav>Dashboard</a>
+          <a class="nav-link" href="analytics.html" data-nav>Analytics</a>
           <a class="nav-link" href="students.html" data-nav>Students</a>
           <a class="nav-link" href="attendance.html" data-nav>Attendance</a>
           <a class="nav-link" href="records.html" data-nav>Records</a>
           <a class="nav-link" href="classes.html" data-nav>Classes</a>
+          <a class="nav-link" href="settings.html" data-nav>Settings</a>
         </nav>
       </div>
       <div class="sidebar-user">
@@ -62,6 +65,24 @@
 
       <section class="grid two">
         <article class="card">
+          <h3>AI Attendance Insight</h3>
+          <p class="section-copy">Natural-language summary generated from today's attendance with fallback if AI is unavailable.</p>
+          <div id="dashboard-ai-summary" class="insight-text">Loading insights...</div>
+          <p class="helper-text" id="dashboard-ai-fallback"></p>
+        </article>
+        <article class="card">
+          <h3>Advanced Insights</h3>
+          <p class="section-copy">Open the Analytics page for trend charts, risk alerts, and voice-guided navigation.</p>
+          <div class="inline-actions">
+            <a class="btn btn-primary" href="analytics.html">Open Analytics</a>
+            <a class="btn btn-secondary" href="attendance.html">Mark Attendance</a>
+            <a class="btn btn-secondary" href="settings.html">Settings</a>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid two">
+        <article class="card">
           <h3>Recent Activity</h3>
           <div id="recent-activity"></div>
         </article>
@@ -90,6 +111,18 @@
             </table>
           </div>
         </article>
+      </section>
+
+      <section class="card">
+        <div class="toolbar">
+          <div>
+            <h3>Weekly Attendance Trend</h3>
+            <p class="section-copy">A simple weekly trend so teachers can spot dips quickly.</p>
+          </div>
+        </div>
+        <div class="chart-shell">
+          <canvas id="dashboard-weekly-chart"></canvas>
+        </div>
       </section>
 
       <section class="card">

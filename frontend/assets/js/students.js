@@ -14,6 +14,15 @@ let currentPage = 1;
 let searchTimer = null;
 let classes = [];
 
+function createAvatar(name) {
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((part) => part[0] || "")
+    .join("")
+    .toUpperCase();
+}
+
 function renderClassOptions() {
   const options = classes
     .map((classroom) => `<option value="${classroom.id}">${window.appUi.escapeHtml(classroom.name)}</option>`)
@@ -101,8 +110,16 @@ function renderStudents(response) {
     .map(
       (student) => `
         <tr>
-          <td>${student.roll_number}</td>
-          <td>${window.appUi.escapeHtml(student.name)}</td>
+          <td><span class="roll-pill">${String(student.roll_number).padStart(2, "0")}</span></td>
+          <td>
+            <div class="student-row-main">
+              <div class="student-avatar">${createAvatar(student.name)}</div>
+              <div class="student-meta">
+                <strong>${window.appUi.escapeHtml(student.name)}</strong>
+                <span>${window.appUi.escapeHtml(student.class_name || "Unassigned")}</span>
+              </div>
+            </div>
+          </td>
           <td>${window.appUi.escapeHtml(student.class_name || "Unassigned")}</td>
           ${assignmentControls(student)}
         </tr>

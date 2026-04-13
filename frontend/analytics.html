@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics | Attendance Management System</title>
+  <link rel="stylesheet" href="/assets/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+  <script src="/assets/js/api.js" defer></script>
+  <script src="/assets/js/common.js" defer></script>
+  <script src="/assets/js/voice.js" defer></script>
+  <script src="/assets/js/analytics.js" defer></script>
+</head>
+<body>
+  <div class="shell-layout">
+    <aside class="sidebar">
+      <div>
+        <div class="sidebar-brand">
+          <h1>Attendance Pro</h1>
+          <p>School attendance workspace</p>
+        </div>
+        <nav class="sidebar-nav">
+          <a class="nav-link" href="dashboard.html" data-nav>Dashboard</a>
+          <a class="nav-link" href="analytics.html" data-nav>Analytics</a>
+          <a class="nav-link" href="students.html" data-nav>Students</a>
+          <a class="nav-link" href="attendance.html" data-nav>Attendance</a>
+          <a class="nav-link" href="records.html" data-nav>Records</a>
+          <a class="nav-link" href="classes.html" data-nav>Classes</a>
+          <a class="nav-link" href="settings.html" data-nav>Settings</a>
+        </nav>
+      </div>
+      <div class="sidebar-user">
+        <strong data-user-name>Loading...</strong>
+        <span data-user-role></span>
+        <button class="btn btn-secondary" type="button" data-logout>Logout</button>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">AI insights, predictions, and trends</p>
+          <h2>Analytics</h2>
+          <p>Explore real-time attendance intelligence with Groq-backed summaries, class trends, at-risk predictions, and voice-assisted navigation.</p>
+        </div>
+      </header>
+
+      <section class="card">
+        <div class="toolbar">
+          <div class="toolbar-actions">
+            <div class="field compact-field">
+              <label for="analytics-date">Summary Date</label>
+              <input class="input" id="analytics-date" type="date">
+            </div>
+            <div class="field compact-field">
+              <label for="analytics-class">Class</label>
+              <select class="select" id="analytics-class">
+                <option value="">All classes</option>
+              </select>
+            </div>
+            <div class="field compact-field">
+              <label for="analytics-threshold">Threshold %</label>
+              <input class="input" id="analytics-threshold" type="number" min="0" max="100" value="75">
+            </div>
+          </div>
+          <div class="hero-actions">
+            <button class="btn btn-secondary" id="analytics-voice-button" type="button">Voice Command</button>
+            <button class="btn btn-primary" id="analytics-refresh-button" type="button">Refresh Analytics</button>
+          </div>
+        </div>
+        <p class="helper-text" id="analytics-voice-feedback">Try commands like “show today's attendance summary”, “open records”, or “mark attendance for CSE-A”.</p>
+      </section>
+
+      <section class="stats-row">
+        <article class="stat-card">
+          <span>Attendance %</span>
+          <strong id="analytics-summary-percentage">0%</strong>
+        </article>
+        <article class="stat-card">
+          <span>Present / Absent / Late</span>
+          <strong id="analytics-summary-status">0 / 0 / 0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Low attendance students</span>
+          <strong id="analytics-summary-low">0</strong>
+        </article>
+        <article class="stat-card">
+          <span>Frequently absent</span>
+          <strong id="analytics-summary-frequent">0</strong>
+        </article>
+      </section>
+
+      <section class="card">
+        <h3>AI Attendance Summary</h3>
+        <p id="analytics-ai-summary" class="insight-text">Loading summary...</p>
+        <p id="analytics-ai-meta" class="helper-text"></p>
+      </section>
+
+      <section class="grid two">
+        <article class="card">
+          <div class="toolbar">
+            <div>
+              <h3>Attendance Trend</h3>
+              <p class="section-copy">Daily attendance trend for the selected class or the first available class in scope.</p>
+            </div>
+            <div class="muted" id="analytics-trend-class-label">Class trend</div>
+          </div>
+          <div class="chart-shell">
+            <canvas id="attendance-trend-chart"></canvas>
+          </div>
+        </article>
+        <article class="card">
+          <h3>Class Comparison</h3>
+          <p class="section-copy">Compare attendance percentages across classes.</p>
+          <div class="chart-shell">
+            <canvas id="class-comparison-chart"></canvas>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid two">
+        <article class="card">
+          <div class="toolbar">
+            <div>
+              <h3>Student Insight</h3>
+              <p class="section-copy">Inspect a student's trend, risk status, and attendance explanation.</p>
+            </div>
+            <div class="field compact-field">
+              <label for="analytics-student">Student</label>
+              <select class="select" id="analytics-student"></select>
+            </div>
+          </div>
+          <div class="metric-grid" id="student-insight-metrics"></div>
+          <p id="student-insight-text" class="insight-text">Select a student to load an AI insight.</p>
+        </article>
+        <article class="card">
+          <h3>Selected Class Insight</h3>
+          <div class="metric-grid" id="class-insight-metrics"></div>
+          <p id="class-insight-text" class="insight-text">Loading class insight...</p>
+          <div id="class-low-attendance-list" class="stack-list"></div>
+        </article>
+      </section>
+
+      <section class="card">
+        <h3>Predicted At-Risk Students</h3>
+        <p class="section-copy">Students likely to fall below the 75% threshold based on current performance and recent trends.</p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Roll</th>
+                <th>Name</th>
+                <th>Class</th>
+                <th>Attendance %</th>
+                <th>Recent %</th>
+                <th>Risk</th>
+                <th>Explanation</th>
+              </tr>
+            </thead>
+            <tbody id="predictions-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-stack" id="toast-root"></div>
+</body>
+</html>

@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 720
     bootstrap_admin_username: str = "admin"
     bootstrap_admin_password: str = "admin12345"
+    groq_api_key: str | None = None
+    groq_model: str = "llama-3.1-8b-instant"
+    groq_timeout_seconds: float = 5.0
 
     model_config = SettingsConfigDict(
         env_file=".env",

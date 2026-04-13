@@ -17,6 +17,8 @@ from app.routes.auth_routes import router as auth_router
 from app.routes.attendance_routes import router as attendance_router
 from app.routes.class_routes import router as class_router
 from app.routes.dashboard_routes import router as dashboard_router
+from app.routes.realtime_routes import router as realtime_router
+from app.routes.settings_routes import router as settings_router
 from app.routes.student_routes import router as student_router
 from app.services.auth_service import ensure_default_admin
 
@@ -56,6 +58,8 @@ app.include_router(dashboard_router)
 app.include_router(analytics_router)
 app.include_router(student_router)
 app.include_router(attendance_router)
+app.include_router(settings_router)
+app.include_router(realtime_router)
 
 
 @app.get("/health")
